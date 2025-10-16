@@ -1,0 +1,166 @@
+[
+  {
+    "id": "cfl-autism-center",
+    "name": "UCF Center for Autism & Related Disabilities (CARD)",
+    "address": "4000 Central Florida Blvd, Orlando, FL 32816",
+    "contact": {
+      "phone": "407-823-6001",
+      "email": "ucfcard@ucf.edu",
+      "website": "https://ucf-card.org/"
+    },
+    "contactPerson": "Program Director",
+    "relevance": "Provides resources and support for individuals with Autism Spectrum Disorders from birth through adulthood.",
+    "category": "Condition-Specific Non-Profit / Support Group",
+    "specializations": [
+      "Autism Spectrum Disorders",
+      "Developmental & Intellectual"
+    ]
+  },
+  {
+    "id": "down-syndrome-assoc-cf",
+    "name": "Down Syndrome Association of Central Florida",
+    "address": "204 N Westmonte Dr, Altamonte Springs, FL 32714",
+    "contact": {
+      "phone": "407-478-5621",
+      "email": "info@dsacf.org",
+      "website": "https://www.dsacf.org/"
+    },
+    "contactPerson": "Executive Director",
+    "relevance": "Offers support, resources, and programs for individuals with Down Syndrome and their families.",
+    "category": "Condition-Specific Non-Profit / Support Group",
+    "specializations": [
+      "Intellectual Disabilities",
+      "Developmental & Intellectual"
+    ]
+  },
+  {
+    "id": "cerebral-palsy-cf",
+    "name": "United Cerebral Palsy of Central Florida",
+    "address": "332 N Laurel Ave, Orlando, FL 32801",
+    "contact": {
+      "phone": "407-852-3300",
+      "email": "N/A",
+      "website": "https://www.ucpcfl.org/"
+    },
+    "contactPerson": "Family Services Coordinator",
+    "relevance": "Provides comprehensive services including therapy, education, and support for individuals with Cerebral Palsy and other disabilities.",
+    "category": "Condition-Specific Non-Profit / Support Group",
+    "specializations": [
+      "Cerebral Palsy",
+      "Developmental & Intellectual",
+      "Physical & Medical"
+    ]
+  },
+  {
+    "id": "nemours-childrens",
+    "name": "Nemours Children's Hospital, Florida",
+    "address": "6535 Nemours Pkwy, Orlando, FL 32827",
+    "contact": {
+      "phone": "407-567-4000",
+      "email": "N/A",
+      "website": "https://www.nemours.org/locations/nemours-childrens-hospital-florida"
+    },
+    "contactPerson": "Neurology Department / Social Work Dept.",
+    "relevance": "Specialized pediatric hospital with departments for neurology, developmental medicine, and complex medical needs.",
+    "category": "Medical / Healthcare",
+    "specializations": [
+      "Epilepsy",
+      "Chronic Medical Conditions",
+      "Cerebral Palsy",
+      "Spina Bifida",
+      "Hearing and Visual Impairments"
+    ]
+  },
+  {
+    "id": "adventhealth-rehab",
+    "name": "AdventHealth Rehabilitation Center",
+    "address": "601 E Rollins St, Orlando, FL 32803",
+    "contact": {
+      "phone": "407-303-6611",
+      "email": "N/A",
+      "website": "https://www.adventhealth.com/hospital/adventhealth-orlando/rehabilitation-and-physical-therapy"
+    },
+    "contactPerson": "Patient Navigator / Rehab Services",
+    "relevance": "Offers inpatient and outpatient physical, occupational, and speech therapy for adults and children with mobility impairments and neurological conditions.",
+    "category": "Medical / Healthcare",
+    "specializations": [
+      "Mobility Impairments",
+      "Physical & Medical"
+    ]
+  },
+  {
+    "id": "orlando-health-arnold-palmer",
+    "name": "Orlando Health Arnold Palmer Hospital for Children",
+    "address": "92 W Miller St, Orlando, FL 32806",
+    "contact": {
+      "phone": "321-841-5111",
+      "email": "N/A",
+      "website": "https://www.arnoldpalmerhospital.com/"
+    },
+    "contactPerson": "Developmental Center for Infants & Children",
+    "relevance": "Top-tier children's hospital with comprehensive services for complex medical needs, developmental delays, and chronic conditions.",
+    "category": "Medical / Healthcare",
+    "specializations": [
+      "Chronic Medical Conditions",
+      "Developmental & Intellectual",
+      "Physical & Medical"
+    ]
+  },
+  {
+    "id": "apd-central-region",
+    "name": "Agency for Persons with Disabilities (APD) - Central Region",
+    "address": "400 W Robinson St, Orlando, FL 32801",
+    "contact": {
+      "phone": "407-245-0440",
+      "email": "N/A",
+      "website": "https://apd.myflorida.com/region/central/"
+    },
+    "contactPerson": "Waiver Support Coordinator Supervisor",
+    "relevance": "State agency responsible for coordinating services for Floridians with developmental disabilities, including waiver programs.",
+    "category": "Community / Government",
+    "specializations": [
+      "Intellectual Disabilities",
+      "Autism Spectrum Disorders",
+      "Cerebral Palsy",
+      "Spina Bifida",
+      "Prader-Willi Syndrome",
+      "Dual Diagnosis"
+    ]
+  },
+  {
+    "id": "center-independent-living-cf",
+    "name": "Center for Independent Living in Central Florida",
+    "address": "720 N Denning Dr, Winter Park, FL 32789",
+    "contact": {
+      "phone": "407-623-1070",
+      "email": "info@cilorlando.org",
+      "website": "https://cilorlando.org/"
+    },
+    "contactPerson": "Information and Referral Specialist",
+    "relevance": "Provides advocacy, resources, and skills training for people with all types of disabilities to live more independently.",
+    "category": "Community / Government",
+    "specializations": [
+      "Mobility Impairments",
+      "Hearing and Visual Impairments",
+      "Developmental & Intellectual",
+      "Physical & Medical"
+    ]
+  },
+  {
+    "id": "best-buddies-cf",
+    "name": "Best Buddies in Central Florida",
+    "address": "111 N Orange Ave #770, Orlando, FL 32801",
+    "contact": {
+      "phone": "407-898-0028",
+      "email": "centralflorida@bestbuddies.org",
+      "website": "https://www.bestbuddies.org/florida/central-florida"
+    },
+    "contactPerson": "Program Manager",
+    "relevance": "Creates opportunities for one-to-one friendships, integrated employment, and leadership development for people with intellectual and developmental disabilities (IDD).",
+    "category": "Community / Government",
+    "specializations": [
+      "Developmental & Intellectual",
+      "Physical & Medical"
+    ]
+  }
+]
