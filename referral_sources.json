@@ -68,7 +68,7 @@
       "Chronic Medical Conditions",
       "Cerebral Palsy",
       "Spina Bifida",
-      "Hearing and Visual Impairments"
+      "Hearing and Visual Impairaments"
     ]
   },
   {
@@ -141,7 +141,7 @@
     "category": "Community / Government",
     "specializations": [
       "Mobility Impairments",
-      "Hearing and Visual Impairments",
+      "Hearing and Visual Impairaments",
       "Developmental & Intellectual",
       "Physical & Medical"
     ]
@@ -162,5 +162,92 @@
       "Developmental & Intellectual",
       "Physical & Medical"
     ]
+  },
+  {
+    "id": "the-arc-sunrise",
+    "name": "The Arc Sunrise of Central Florida",
+    "address": "100 S. Main Street, Leesburg, FL 34748",
+    "contact": {
+      "phone": "352-326-2211",
+      "email": "N/A",
+      "website": "https://www.arcsunrise.org/"
+    },
+    "contactPerson": "Director of Services",
+    "relevance": "Provides residential, employment, and life skills training for adults with intellectual and developmental disabilities in Lake County.",
+    "category": "Community / Government",
+    "specializations": [
+      "Intellectual Disabilities",
+      "Developmental & Intellectual",
+      "Dual Diagnosis"
+    ]
+  },
+  {
+    "id": "early-learning-lake",
+    "name": "Early Learning Coalition of Lake County",
+    "address": "1300 Citizens Blvd, Leesburg, FL 34748",
+    "contact": {
+      "phone": "352-435-0566",
+      "email": "N/A",
+      "website": "https://www.elclc.org/"
+    },
+    "contactPerson": "Inclusion Specialist",
+    "relevance": "Offers resources and support for early childhood development, including programs for children with special needs and developmental delays.",
+    "category": "Community / Government",
+    "specializations": [
+      "Developmental & Intellectual"
+    ]
+  },
+  {
+    "id": "lakeland-regional-neuro",
+    "name": "Lakeland Regional Health - Neurology",
+    "address": "1324 Lakeland Hills Blvd, Lakeland, FL 33805",
+    "contact": {
+      "phone": "863-284-5000",
+      "email": "N/A",
+      "website": "https://www.mylrh.org/neurosciences/"
+    },
+    "contactPerson": "Patient Care Coordinator",
+    "relevance": "Major regional hospital with a dedicated neuroscience and neurology department treating conditions like Epilepsy and Cerebral Palsy.",
+    "category": "Medical / Healthcare",
+    "specializations": [
+      "Epilepsy",
+      "Cerebral Palsy",
+      "Physical & Medical"
+    ]
+  },
+  {
+    "id": "center-for-autism-polk",
+    "name": "The Center for Autism and Related Disabilities (CARD) at USF - Polk County",
+    "address": "Florida Polytechnic University, 4700 Research Way, Lakeland, FL 33805",
+    "contact": {
+      "phone": "813-974-2532",
+      "email": "card-usf@usf.edu",
+      "website": "https://card-usf.fmhi.usf.edu/"
+    },
+    "contactPerson": "Polk County Outreach Coordinator",
+    "relevance": "Satellite office of USF CARD, providing direct assistance and resources to individuals and families affected by autism in Polk County.",
+    "category": "Condition-Specific Non-Profit / Support Group",
+    "specializations": [
+      "Autism Spectrum Disorders",
+      "Developmental & Intellectual"
+    ]
+  },
+  {
+    "id": "new-vision-for-independence",
+    "name": "New Vision for Independence",
+    "address": "224 N. Main Ave, Groveland, FL 34736",
+    "contact": {
+      "phone": "352-435-5040",
+      "email": "info@newvisionfl.org",
+      "website": "https://newvisionfl.org/"
+    },
+    "contactPerson": "Client Services Manager",
+    "relevance": "Provides training and support for individuals with low vision or blindness in Lake and Sumter counties, promoting independence.",
+    "category": "Condition-Specific Non-Profit / Support Group",
+    "specializations": [
+      "Hearing and Visual Impairaments",
+      "Physical & Medical"
+    ]
   }
 ]
+
