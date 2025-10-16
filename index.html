@@ -128,7 +128,7 @@
             <h1 class="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">T&T Serenity Care</h1>
             <p class="text-lg sm:text-xl text-slate-700 mt-2">Referral Source Navigator</p>
             <div class="mt-4 max-w-4xl mx-auto text-slate-600">
-                <p>This interactive tool provides a curated list of potential referral sources within a 20-mile radius of Apopka, FL. Use the filters below to explore organizations, medical facilities, and support groups that serve individuals with developmental, medical, and physical needs aligned with T&T Serenity Care's services.</p>
+                <p>This interactive tool provides a curated list of potential referral sources within a 50-mile radius of Apopka, FL. Use the filters below to explore organizations, medical facilities, and support groups that serve individuals with developmental, medical, and physical needs aligned with T&T Serenity Care's services.</p>
             </div>
         </header>
 
@@ -284,6 +284,24 @@
             const TIMESTAMP_KEY = 'referralDataTimestamp';
             const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+            // --- NEW: Fallback data is embedded here ---
+            const fallbackData = [
+              { "id": "cfl-autism-center", "name": "UCF Center for Autism & Related Disabilities (CARD)", "address": "4000 Central Florida Blvd, Orlando, FL 32816", "contact": { "phone": "407-823-6001", "email": "ucfcard@ucf.edu", "website": "https://ucf-card.org/" }, "contactPerson": "Program Director", "relevance": "Provides resources and support for individuals with Autism Spectrum Disorders from birth through adulthood.", "category": "Condition-Specific Non-Profit / Support Group", "specializations": [ "Autism Spectrum Disorders", "Developmental & Intellectual" ] },
+              { "id": "down-syndrome-assoc-cf", "name": "Down Syndrome Association of Central Florida", "address": "204 N Westmonte Dr, Altamonte Springs, FL 32714", "contact": { "phone": "407-478-5621", "email": "info@dsacf.org", "website": "https://www.dsacf.org/" }, "contactPerson": "Executive Director", "relevance": "Offers support, resources, and programs for individuals with Down Syndrome and their families.", "category": "Condition-Specific Non-Profit / Support Group", "specializations": [ "Intellectual Disabilities", "Developmental & Intellectual" ] },
+              { "id": "cerebral-palsy-cf", "name": "United Cerebral Palsy of Central Florida", "address": "332 N Laurel Ave, Orlando, FL 32801", "contact": { "phone": "407-852-3300", "email": "N/A", "website": "https://www.ucpcfl.org/" }, "contactPerson": "Family Services Coordinator", "relevance": "Provides comprehensive services including therapy, education, and support for individuals with Cerebral Palsy and other disabilities.", "category": "Condition-Specific Non-Profit / Support Group", "specializations": [ "Cerebral Palsy", "Developmental & Intellectual", "Physical & Medical" ] },
+              { "id": "nemours-childrens", "name": "Nemours Children's Hospital, Florida", "address": "6535 Nemours Pkwy, Orlando, FL 32827", "contact": { "phone": "407-567-4000", "email": "N/A", "website": "https://www.nemours.org/locations/nemours-childrens-hospital-florida" }, "contactPerson": "Neurology Department / Social Work Dept.", "relevance": "Specialized pediatric hospital with departments for neurology, developmental medicine, and complex medical needs.", "category": "Medical / Healthcare", "specializations": [ "Epilepsy", "Chronic Medical Conditions", "Cerebral Palsy", "Spina Bifida", "Hearing and Visual Impairaments" ] },
+              { "id": "adventhealth-rehab", "name": "AdventHealth Rehabilitation Center", "address": "601 E Rollins St, Orlando, FL 32803", "contact": { "phone": "407-303-6611", "email": "N/A", "website": "https://www.adventhealth.com/hospital/adventhealth-orlando/rehabilitation-and-physical-therapy" }, "contactPerson": "Patient Navigator / Rehab Services", "relevance": "Offers inpatient and outpatient physical, occupational, and speech therapy for adults and children with mobility impairments and neurological conditions.", "category": "Medical / Healthcare", "specializations": [ "Mobility Impairments", "Physical & Medical" ] },
+              { "id": "orlando-health-arnold-palmer", "name": "Orlando Health Arnold Palmer Hospital for Children", "address": "92 W Miller St, Orlando, FL 32806", "contact": { "phone": "321-841-5111", "email": "N/A", "website": "https://www.arnoldpalmerhospital.com/" }, "contactPerson": "Developmental Center for Infants & Children", "relevance": "Top-tier children's hospital with comprehensive services for complex medical needs, developmental delays, and chronic conditions.", "category": "Medical / Healthcare", "specializations": [ "Chronic Medical Conditions", "Developmental & Intellectual", "Physical & Medical" ] },
+              { "id": "apd-central-region", "name": "Agency for Persons with Disabilities (APD) - Central Region", "address": "400 W Robinson St, Orlando, FL 32801", "contact": { "phone": "407-245-0440", "email": "N/A", "website": "https://apd.myflorida.com/region/central/" }, "contactPerson": "Waiver Support Coordinator Supervisor", "relevance": "State agency responsible for coordinating services for Floridians with developmental disabilities, including waiver programs.", "category": "Community / Government", "specializations": [ "Intellectual Disabilities", "Autism Spectrum Disorders", "Cerebral Palsy", "Spina Bifida", "Prader-Willi Syndrome", "Dual Diagnosis" ] },
+              { "id": "center-independent-living-cf", "name": "Center for Independent Living in Central Florida", "address": "720 N Denning Dr, Winter Park, FL 32789", "contact": { "phone": "407-623-1070", "email": "info@cilorlando.org", "website": "https://cilorlando.org/" }, "contactPerson": "Information and Referral Specialist", "relevance": "Provides advocacy, resources, and skills training for people with all types of disabilities to live more independently.", "category": "Community / Government", "specializations": [ "Mobility Impairments", "Hearing and Visual Impairaments", "Developmental & Intellectual", "Physical & Medical" ] },
+              { "id": "best-buddies-cf", "name": "Best Buddies in Central Florida", "address": "111 N Orange Ave #770, Orlando, FL 32801", "contact": { "phone": "407-898-0028", "email": "centralflorida@bestbuddies.org", "website": "https://www.bestbuddies.org/florida/central-florida" }, "contactPerson": "Program Manager", "relevance": "Creates opportunities for one-to-one friendships, integrated employment, and leadership development for people with intellectual and developmental disabilities (IDD).", "category": "Community / Government", "specializations": [ "Developmental & Intellectual", "Physical & Medical" ] },
+              { "id": "the-arc-sunrise", "name": "The Arc Sunrise of Central Florida", "address": "100 S. Main Street, Leesburg, FL 34748", "contact": { "phone": "352-326-2211", "email": "N/A", "website": "https://www.arcsunrise.org/" }, "contactPerson": "Director of Services", "relevance": "Provides residential, employment, and life skills training for adults with intellectual and developmental disabilities in Lake County.", "category": "Community / Government", "specializations": [ "Intellectual Disabilities", "Developmental & Intellectual", "Dual Diagnosis" ] },
+              { "id": "early-learning-lake", "name": "Early Learning Coalition of Lake County", "address": "1300 Citizens Blvd, Leesburg, FL 34748", "contact": { "phone": "352-435-0566", "email": "N/A", "website": "https://www.elclc.org/" }, "contactPerson": "Inclusion Specialist", "relevance": "Offers resources and support for early childhood development, including programs for children with special needs and developmental delays.", "category": "Community / Government", "specializations": [ "Developmental & Intellectual" ] },
+              { "id": "lakeland-regional-neuro", "name": "Lakeland Regional Health - Neurology", "address": "1324 Lakeland Hills Blvd, Lakeland, FL 33805", "contact": { "phone": "863-284-5000", "email": "N/A", "website": "https://www.mylrh.org/neurosciences/" }, "contactPerson": "Patient Care Coordinator", "relevance": "Major regional hospital with a dedicated neuroscience and neurology department treating conditions like Epilepsy and Cerebral Palsy.", "category": "Medical / Healthcare", "specializations": [ "Epilepsy", "Cerebral Palsy", "Physical & Medical" ] },
+              { "id": "center-for-autism-polk", "name": "The Center for Autism and Related Disabilities (CARD) at USF - Polk County", "address": "Florida Polytechnic University, 4700 Research Way, Lakeland, FL 33805", "contact": { "phone": "813-974-2532", "email": "card-usf@usf.edu", "website": "https://card-usf.fmhi.usf.edu/" }, "contactPerson": "Polk County Outreach Coordinator", "relevance": "Satellite office of USF CARD, providing direct assistance and resources to individuals and families affected by autism in Polk County.", "category": "Condition-Specific Non-Profit / Support Group", "specializations": [ "Autism Spectrum Disorders", "Developmental & Intellectual" ] },
+              { "id": "new-vision-for-independence", "name": "New Vision for Independence", "address": "224 N. Main Ave, Groveland, FL 34736", "contact": { "phone": "352-435-5040", "email": "info@newvisionfl.org", "website": "https://newvisionfl.org/" }, "contactPerson": "Client Services Manager", "relevance": "Provides training and support for individuals with low vision or blindness in Lake and Sumter counties, promoting independence.", "category": "Condition-Specific Non-Profit / Support Group", "specializations": [ "Hearing and Visual Impairaments", "Physical & Medical" ] }
+            ];
+
             let referralSources = [];
             let allSpecializations = [];
 
@@ -329,7 +347,7 @@
                 referralSources = data;
                 allSpecializations = [...new Set(referralSources.flatMap(s => s.specializations))].sort();
                 
-                loadUserData(); // This is for the notes/logs
+                loadUserData(); 
                 initSpecializationFilters();
                 setupCharts();
                 render();
@@ -338,7 +356,7 @@
                 resultsContent.classList.remove('hidden');
 
                 if (isOffline) {
-                    offlineNoticeContainer.innerHTML = `<p id="cache-notice" class="text-center text-sm text-slate-600 mb-4 bg-yellow-100/50 p-2 rounded-lg">Could not connect to server. Displaying cached data from your last visit.</p>`;
+                    offlineNoticeContainer.innerHTML = `<p id="cache-notice" class="text-center text-sm text-slate-600 mb-4 bg-yellow-100/50 p-2 rounded-lg">Could not connect to server. Displaying cached or backup data.</p>`;
                 }
             }
             
@@ -380,9 +398,13 @@
                     initializeUI(data);
                 } catch (error) {
                     console.error("Failed to fetch from network:", error);
+                    // --- MODIFIED: Fallback logic ---
                     if (cachedData) {
                         console.log("Network failed. Falling back to stale cache.");
                         initializeUI(JSON.parse(cachedData), true);
+                    } else if (fallbackData && fallbackData.length > 0) {
+                        console.log("Network failed and no cache. Using built-in fallback data.");
+                        initializeUI(fallbackData, true);
                     } else {
                         loadingState.innerHTML = `<p class="text-red-500 font-semibold">Error: Could not load the referral directory.<br>Please check your internet connection and try again.</p>`;
                     }
@@ -746,3 +768,4 @@
     </script>
 </body>
 </html>
+
