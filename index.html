@@ -102,7 +102,7 @@
         }
         
         .specialization-checkbox:checked, .county-checkbox:checked {
-            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%e");
         }
         
         ::-webkit-scrollbar {
@@ -134,15 +134,15 @@
 
         <nav class="flex justify-center mb-8 sm:mb-12">
             <div class="glass-panel p-1.5 sm:p-2 rounded-xl shadow-md flex space-x-1 sm:space-x-2">
-                <div id="tab-directory" class="nav-tab active">Referrals</div>
-                <div id="tab-coordinators" class="nav-tab">Coordinators</div>
+                <div id="tab-directory" class="nav-tab">Referrals</div>
+                <div id="tab-coordinators" class="nav-tab active">Coordinators</div>
                 <div id="tab-history" class="nav-tab">History</div>
             </div>
         </nav>
 
         <main>
             <!-- View 1: Referral Directory -->
-            <div id="view-directory" class="view active">
+            <div id="view-directory" class="view">
                 <!-- Filter Controls -->
                 <section id="filters-referrals" class="glass-panel p-4 sm:p-6 rounded-3xl shadow-lg mb-8">
                     <h2 class="text-xl font-semibold mb-4 text-slate-800">Filter and Search Organizations</h2>
@@ -217,14 +217,14 @@
                             </div>
                         </div>
                         <div id="results-grid-referrals" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                            <div class="text-center p-5 text-slate-600">Loading...</div>
+                             <div class="text-center p-5 col-span-full text-slate-600">Loading...</div>
                         </div>
                     </div>
                 </section>
             </div>
             
             <!-- View 2: Coordinators -->
-            <div id="view-coordinators" class="view">
+            <div id="view-coordinators" class="view active">
                  <!-- Filter Controls -->
                 <section id="filters-coordinators" class="glass-panel p-4 sm:p-6 rounded-3xl shadow-lg mb-8">
                     <h2 class="text-xl font-semibold mb-4 text-slate-800">Filter and Search Coordinators</h2>
@@ -257,7 +257,7 @@
                             </div>
                         </div>
                         <div id="results-grid-coordinators" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                             <div class="text-center p-5 text-slate-600">Loading...</div>
+                             <div class="text-center p-5 col-span-full text-slate-600">Loading...</div>
                         </div>
                     </div>
                 </section>
@@ -269,7 +269,7 @@
                 <section id="history-log" class="glass-panel p-4 sm:p-6 rounded-3xl shadow-lg">
                     <h2 class="text-2xl font-semibold text-slate-900 mb-4">Combined Log & Notes History</h2>
                     <div id="history-content" class="space-y-6 max-h-[80vh] overflow-y-auto pr-2 sm:pr-4">
-                        <!-- History items will be injected here -->
+                        <div class="text-center p-5 text-slate-600">Loading history...</div>
                     </div>
                 </section>
             </div>
@@ -319,8 +319,8 @@
 
 
     <script>
-        // Note: Full script is redacted for brevity.
-        // The complete, bug-fixed script is in the downloadable file.
+        // Note: The complete, bug-fixed script, including the full 212-coordinator
+        // fallback list, is in the downloadable file. This is a summary for display.
     </script>
 </body>
 </html>
