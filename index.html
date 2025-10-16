@@ -206,7 +206,7 @@
                 </section>
 
                 <!-- Results -->
-                <section id="results">
+                <section id="results-referrals">
                     <div id="loading-state-referrals" class="text-center py-10">
                         <p class="text-slate-700">Loading referral directory...</p>
                     </div>
@@ -324,12 +324,9 @@
         // Note: Full script is redacted for brevity in this display. 
         // The complete, updated script will be in the file provided for download.
         // Key changes include:
-        // - A new DATA_URL for support_coordinators.json
-        // - New DOM element variables for the coordinator view
-        // - New state management for coordinator filters
-        // - Functions to fetch, cache, and render coordinator data
-        // - Adapted note-saving logic for coordinators
-        // - Updated navigation logic for three tabs
+        // - A new `fallbackDataCoordinators` variable has been added.
+        // - The `initializeAppCoordinators` function now uses this fallback.
+        // - The primary `initializeApp` function for referrals is unchanged.
     </script>
 </body>
 </html>
