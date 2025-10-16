@@ -1,0 +1,130 @@
+[
+  {
+    "id": "wsc_1",
+    "name": "Andrew Miles",
+    "agency": "Achievable Abilities Support Services, LLC",
+    "phone": "(704) 779-2177",
+    "email": "drew.wsc1@gmail.com",
+    "counties": ["Hernando"]
+  },
+  {
+    "id": "wsc_2",
+    "name": "Jenny Snyder",
+    "agency": "Achievable Abilities Support Services, LLC",
+    "phone": "(941) 545-3696",
+    "email": "jennysnyderwsc@gmail.com",
+    "counties": []
+  },
+  {
+    "id": "wsc_3",
+    "name": "Ryan Connors",
+    "agency": "Achievable Abilities Support Services, LLC",
+    "phone": "(863) 709-7510",
+    "email": "ryanconnorswsc@gmail.com",
+    "counties": ["Polk", "Highland"]
+  },
+  {
+    "id": "wsc_4",
+    "name": "Ashley Dukes",
+    "agency": "Achievable Abilities Support Services, LLC",
+    "phone": "(315) 667-0097",
+    "email": "ashleyxmadola@aol.com",
+    "counties": ["Polk", "Highlands", "Hardee"]
+  },
+  {
+    "id": "wsc_5",
+    "name": "Jamie Boyd",
+    "agency": "Achievable Abilities Support Services, LLC",
+    "phone": "(863) 585-8295",
+    "email": "jamieboydwsc@gmail.com",
+    "counties": ["Polk", "Highlands", "Hardee"]
+  },
+  {
+    "id": "wsc_6",
+    "name": "Maxine Jimenez",
+    "agency": "Active Group Supports",
+    "phone": "407-463-5148",
+    "email": "lanamax49@gmail.com",
+    "counties": ["Orange", "Seminole"]
+  },
+  {
+    "id": "wsc_7",
+    "name": "Victor Galan",
+    "agency": "Active Group Supports",
+    "phone": "407-310-2588",
+    "email": "victorwsc@yahoo.com",
+    "counties": ["Orange", "Seminole"]
+  },
+  {
+    "id": "wsc_8",
+    "name": "Marving A Jimenez",
+    "agency": "Active Group Supports",
+    "phone": "",
+    "email": "activegs2021@gmail.com",
+    "counties": ["Orange", "Seminole"]
+  },
+  {
+    "id": "wsc_9",
+    "name": "Michelle Allen",
+    "agency": "Allen & Associates",
+    "phone": "(321) 615-5680",
+    "email": "allen4mwsc@yahoo.com",
+    "counties": ["Brevard"]
+  },
+  {
+    "id": "wsc_10",
+    "name": "Tara Downs",
+    "agency": "Space Coast Support Coordinators",
+    "phone": "321-427-1101",
+    "email": "wscdowns@gmail.com",
+    "counties": ["Brevard"]
+  },
+  {
+    "id": "wsc_11",
+    "name": "Anthony Peck",
+    "agency": "Space Coast Support Coordinators",
+    "phone": "321-557-2121",
+    "email": "anthony.j.peck.1975@gmail.com",
+    "counties": ["Brevard"]
+  },
+  {
+    "id": "wsc_12",
+    "name": "Eric Allen",
+    "agency": "Space Coast Support Coordinators",
+    "phone": "(321) 750-4334",
+    "email": "e_allen101@yahoo.com",
+    "counties": ["Brevard"]
+  },
+  {
+    "id": "wsc_13",
+    "name": "Dustie Huff",
+    "agency": "Support Advocates, LLC",
+    "phone": "(585) 622-5298",
+    "email": "dustie@supportadvocates.com",
+    "counties": ["Seminole"]
+  },
+  {
+    "id": "wsc_14",
+    "name": "Olivia Diebate",
+    "agency": "Support Advocates, LLC",
+    "phone": "(407) 970-9884",
+    "email": "Olivia@supportadvocates.com",
+    "counties": ["Seminole", "Osceola", "Orange"]
+  },
+  {
+    "id": "wsc_15",
+    "name": "Keri L. Robinson",
+    "agency": "Support Advocates, LLC",
+    "phone": "(304) 617-6482",
+    "email": "keri@supportadvocates.com",
+    "counties": ["Orange"]
+  },
+  {
+    "id": "wsc_16",
+    "name": "Gerda Mothersil",
+    "agency": "Support Advocates, LLC",
+    "phone": "321-277-6195",
+    "email": "gerda@supportadvocates.com",
+    "counties": ["Orange", "Osceola", "Seminole"]
+  }
+]
