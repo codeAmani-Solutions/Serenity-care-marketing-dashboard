@@ -210,6 +210,7 @@
                         <p class="text-slate-700">Loading referral directory...</p>
                     </div>
                     <div id="results-content" class="hidden">
+                         <div id="offline-notice-container"></div>
                         <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 px-2 gap-2">
                             <h2 class="text-2xl font-semibold text-slate-900">Referral Sources</h2>
                             <div class="text-left sm:text-right">
@@ -278,9 +279,10 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
-            // This is the URL to your data file on GitHub.
-            // You will need to replace this with your actual URL after uploading the files.
-            const DATA_URL = 'https://github.com/codeAmani-Solutions/Serenity-care-marketing-dashboard/blob/main/referral_sources.json';
+            const DATA_URL = 'https://codeamani-solutions.github.io/Serenity-care-marketing-dashboard/referral_sources.json';
+            const CACHE_KEY = 'referralDataCache';
+            const TIMESTAMP_KEY = 'referralDataTimestamp';
+            const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
             let referralSources = [];
             let allSpecializations = [];
@@ -292,6 +294,7 @@
             const resultsCount = document.getElementById('results-count');
             const loadingState = document.getElementById('loading-state');
             const resultsContent = document.getElementById('results-content');
+            const offlineNoticeContainer = document.getElementById('offline-notice-container');
             
             const tabDirectory = document.getElementById('tab-directory');
             const tabHistory = document.getElementById('tab-history');
@@ -322,27 +325,67 @@
                 specializations: []
             };
 
-            async functioninitializeApp() {
+            function initializeUI(data, isOffline = false) {
+                referralSources = data;
+                allSpecializations = [...new Set(referralSources.flatMap(s => s.specializations))].sort();
+                
+                loadUserData(); // This is for the notes/logs
+                initSpecializationFilters();
+                setupCharts();
+                render();
+                
+                loadingState.classList.add('hidden');
+                resultsContent.classList.remove('hidden');
+
+                if (isOffline) {
+                    offlineNoticeContainer.innerHTML = `<p id="cache-notice" class="text-center text-sm text-slate-600 mb-4 bg-yellow-100/50 p-2 rounded-lg">Could not connect to server. Displaying cached data from your last visit.</p>`;
+                }
+            }
+            
+            async function fetchAndUpdateCache() {
                 try {
                     const response = await fetch(DATA_URL);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    referralSources = await response.json();
-                    
-                    allSpecializations = [...new Set(referralSources.flatMap(s => s.specializations))].sort();
-                    
-                    loadUserData();
-                    initSpecializationFilters();
-                    setupCharts();
-                    render();
-                    
-                    loadingState.classList.add('hidden');
-                    resultsContent.classList.remove('hidden');
-
+                    if (!response.ok) return;
+                    const data = await response.json();
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+                    localStorage.setItem(TIMESTAMP_KEY, Date.now().toString());
+                    console.log("Background cache updated.");
                 } catch (error) {
-                    loadingState.innerHTML = `<p class="text-red-500 font-semibold">Error: Could not load the referral directory.<br>Please check the DATA_URL in the script and make sure the JSON file is accessible.</p>`;
-                    console.error("Failed to fetch referral sources:", error);
+                    console.error("Failed to update cache in background:", error);
+                }
+            }
+
+            async function initializeApp() {
+                const cachedData = localStorage.getItem(CACHE_KEY);
+                const cachedTimestamp = localStorage.getItem(TIMESTAMP_KEY);
+
+                if (cachedData && cachedTimestamp) {
+                    const age = Date.now() - parseInt(cachedTimestamp, 10);
+                    if (age < CACHE_DURATION_MS) {
+                        console.log("Loading fresh data from cache.");
+                        initializeUI(JSON.parse(cachedData));
+                        fetchAndUpdateCache(); // Update in background
+                        return;
+                    }
+                }
+
+                try {
+                    const response = await fetch(DATA_URL);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
+                    
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+                    localStorage.setItem(TIMESTAMP_KEY, Date.now().toString());
+                    console.log("Fetched new data and cached it.");
+                    initializeUI(data);
+                } catch (error) {
+                    console.error("Failed to fetch from network:", error);
+                    if (cachedData) {
+                        console.log("Network failed. Falling back to stale cache.");
+                        initializeUI(JSON.parse(cachedData), true);
+                    } else {
+                        loadingState.innerHTML = `<p class="text-red-500 font-semibold">Error: Could not load the referral directory.<br>Please check your internet connection and try again.</p>`;
+                    }
                 }
             }
 
@@ -703,4 +746,3 @@
     </script>
 </body>
 </html>
-
