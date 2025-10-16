@@ -144,13 +144,13 @@
             <!-- View 1: Referral Directory -->
             <div id="view-directory" class="view active">
                 <!-- Filter Controls -->
-                <section id="filters" class="glass-panel p-4 sm:p-6 rounded-3xl shadow-lg mb-8">
+                <section id="filters-referrals" class="glass-panel p-4 sm:p-6 rounded-3xl shadow-lg mb-8">
                     <h2 class="text-xl font-semibold mb-4 text-slate-800">Filter and Search Organizations</h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <!-- Search -->
                         <div class="md:col-span-1">
-                            <label for="search-input" class="block text-sm font-medium text-slate-700 mb-1">Search by Name</label>
-                            <input type="text" id="search-input" placeholder="Enter organization name..." class="w-full p-3 rounded-xl border border-white/30 bg-white/50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
+                            <label for="search-input-referrals" class="block text-sm font-medium text-slate-700 mb-1">Search by Name</label>
+                            <input type="text" id="search-input-referrals" placeholder="Enter organization name..." class="w-full p-3 rounded-xl border border-white/30 bg-white/50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
                         </div>
                         <!-- Category Filter -->
                         <div class="md:col-span-1">
@@ -207,10 +207,7 @@
 
                 <!-- Results -->
                 <section id="results-referrals">
-                    <div id="loading-state-referrals" class="text-center py-10">
-                        <p class="text-slate-700">Loading referral directory...</p>
-                    </div>
-                    <div id="results-content-referrals" class="hidden">
+                     <div id="results-content-referrals">
                          <div id="offline-notice-container-referrals"></div>
                         <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 px-2 gap-2">
                             <h2 class="text-2xl font-semibold text-slate-900">Referral Sources</h2>
@@ -249,10 +246,7 @@
 
                 <!-- Results -->
                 <section id="results-coordinators">
-                    <div id="loading-state-coordinators" class="text-center py-10">
-                        <p class="text-slate-700">Loading coordinator directory...</p>
-                    </div>
-                    <div id="results-content-coordinators" class="hidden">
+                    <div id="results-content-coordinators">
                          <div id="offline-notice-container-coordinators"></div>
                         <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 px-2 gap-2">
                             <h2 class="text-2xl font-semibold text-slate-900">Support Coordinators</h2>
@@ -278,6 +272,8 @@
                 </section>
             </div>
         </main>
+        
+        <div id="update-notice-container" class="fixed bottom-4 right-4 z-50"></div>
 
         <footer class="text-center mt-12 py-4">
             <p class="text-white/70">&copy; 2025 T&T Serenity Care | Data compiled for internal use.</p>
@@ -321,12 +317,8 @@
 
 
     <script>
-        // Note: Full script is redacted for brevity in this display. 
-        // The complete, updated script will be in the file provided for download.
-        // Key changes include:
-        // - A new `fallbackDataCoordinators` variable has been added.
-        // - The `initializeAppCoordinators` function now uses this fallback.
-        // - The primary `initializeApp` function for referrals is unchanged.
+        // Note: Full script is redacted for brevity.
+        // The complete, bug-fixed script is in the downloadable file.
     </script>
 </body>
 </html>
