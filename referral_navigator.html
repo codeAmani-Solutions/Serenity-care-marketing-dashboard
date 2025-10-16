@@ -206,14 +206,19 @@
 
                 <!-- Results -->
                 <section id="results">
-                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 px-2 gap-2">
-                        <h2 class="text-2xl font-semibold text-slate-900">Referral Sources</h2>
-                        <div class="text-left sm:text-right">
-                            <span id="results-count" class="font-bold text-slate-800 text-lg"></span>
-                            <span class="text-slate-600">organizations found</span>
-                        </div>
+                    <div id="loading-state" class="text-center py-10">
+                        <p class="text-slate-700">Loading referral directory...</p>
                     </div>
-                    <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div id="results-content" class="hidden">
+                        <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 px-2 gap-2">
+                            <h2 class="text-2xl font-semibold text-slate-900">Referral Sources</h2>
+                            <div class="text-left sm:text-right">
+                                <span id="results-count" class="font-bold text-slate-800 text-lg"></span>
+                                <span class="text-slate-600">organizations found</span>
+                            </div>
+                        </div>
+                        <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        </div>
                     </div>
                 </section>
             </div>
@@ -273,105 +278,20 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
-            const referralSources = [{
-                id: 'cfl-autism-center',
-                name: 'UCF Center for Autism & Related Disabilities (CARD)',
-                address: '4000 Central Florida Blvd, Orlando, FL 32816',
-                contact: { phone: '407-823-6001', email: 'ucfcard@ucf.edu', website: 'https://ucf-card.org/' },
-                contactPerson: 'Program Director',
-                relevance: 'Provides resources and support for individuals with Autism Spectrum Disorders from birth through adulthood.',
-                category: "Condition-Specific Non-Profit / Support Group",
-                specializations: ["Autism Spectrum Disorders", "Developmental & Intellectual"]
-            },
-            {
-                id: 'down-syndrome-assoc-cf',
-                name: 'Down Syndrome Association of Central Florida',
-                address: '204 N Westmonte Dr, Altamonte Springs, FL 32714',
-                contact: { phone: '407-478-5621', email: 'info@dsacf.org', website: 'https://www.dsacf.org/' },
-                contactPerson: 'Executive Director',
-                relevance: 'Offers support, resources, and programs for individuals with Down Syndrome and their families.',
-                category: "Condition-Specific Non-Profit / Support Group",
-                specializations: ["Intellectual Disabilities", "Developmental & Intellectual"]
-            },
-            {
-                id: 'cerebral-palsy-cf',
-                name: 'United Cerebral Palsy of Central Florida',
-                address: '332 N Laurel Ave, Orlando, FL 32801',
-                contact: { phone: '407-852-3300', email: 'N/A', website: 'https://www.ucpcfl.org/' },
-                contactPerson: 'Family Services Coordinator',
-                relevance: 'Provides comprehensive services including therapy, education, and support for individuals with Cerebral Palsy and other disabilities.',
-                category: "Condition-Specific Non-Profit / Support Group",
-                specializations: ["Cerebral Palsy", "Developmental & Intellectual", "Physical & Medical"]
-            },
-            {
-                id: 'nemours-childrens',
-                name: "Nemours Children's Hospital, Florida",
-                address: '6535 Nemours Pkwy, Orlando, FL 32827',
-                contact: { phone: '407-567-4000', email: 'N/A', website: 'https://www.nemours.org/locations/nemours-childrens-hospital-florida' },
-                contactPerson: 'Neurology Department / Social Work Dept.',
-                relevance: 'Specialized pediatric hospital with departments for neurology, developmental medicine, and complex medical needs.',
-                category: "Medical / Healthcare",
-                specializations: ["Epilepsy", "Chronic Medical Conditions", "Cerebral Palsy", "Spina Bifida", "Hearing and Visual Impairments"]
-            },
-            {
-                id: 'adventhealth-rehab',
-                name: 'AdventHealth Rehabilitation Center',
-                address: '601 E Rollins St, Orlando, FL 32803',
-                contact: { phone: '407-303-6611', email: 'N/A', website: 'https://www.adventhealth.com/hospital/adventhealth-orlando/rehabilitation-and-physical-therapy' },
-                contactPerson: 'Patient Navigator / Rehab Services',
-                relevance: 'Offers inpatient and outpatient physical, occupational, and speech therapy for adults and children with mobility impairments and neurological conditions.',
-                category: "Medical / Healthcare",
-                specializations: ["Mobility Impairments", "Physical & Medical"]
-            },
-            {
-                id: 'orlando-health-arnold-palmer',
-                name: "Orlando Health Arnold Palmer Hospital for Children",
-                address: '92 W Miller St, Orlando, FL 32806',
-                contact: { phone: '321-841-5111', email: 'N/A', website: 'https://www.arnoldpalmerhospital.com/' },
-                contactPerson: 'Developmental Center for Infants & Children',
-                relevance: 'Top-tier children\'s hospital with comprehensive services for complex medical needs, developmental delays, and chronic conditions.',
-                category: "Medical / Healthcare",
-                specializations: ["Chronic Medical Conditions", "Developmental & Intellectual", "Physical & Medical"]
-            },
-            {
-                id: 'apd-central-region',
-                name: 'Agency for Persons with Disabilities (APD) - Central Region',
-                address: '400 W Robinson St, Orlando, FL 32801',
-                contact: { phone: '407-245-0440', email: 'N/A', website: 'https://apd.myflorida.com/region/central/' },
-                contactPerson: 'Waiver Support Coordinator Supervisor',
-                relevance: 'State agency responsible for coordinating services for Floridians with developmental disabilities, including waiver programs.',
-                category: "Community / Government",
-                specializations: ["Intellectual Disabilities", "Autism Spectrum Disorders", "Cerebral Palsy", "Spina Bifida", "Prader-Willi Syndrome", "Dual Diagnosis"]
-            },
-            {
-                id: 'center-independent-living-cf',
-                name: 'Center for Independent Living in Central Florida',
-                address: '720 N Denning Dr, Winter Park, FL 32789',
-                contact: { phone: '407-623-1070', email: 'info@cilorlando.org', website: 'https://cilorlando.org/' },
-                contactPerson: 'Information and Referral Specialist',
-                relevance: 'Provides advocacy, resources, and skills training for people with all types of disabilities to live more independently.',
-                category: "Community / Government",
-                specializations: ["Mobility Impairments", "Hearing and Visual Impairments", "Developmental & Intellectual", "Physical & Medical"]
-            },
-            {
-                id: 'best-buddies-cf',
-                name: 'Best Buddies in Central Florida',
-                address: '111 N Orange Ave #770, Orlando, FL 32801',
-                contact: { phone: '407-898-0028', email: 'centralflorida@bestbuddies.org', website: 'https://www.bestbuddies.org/florida/central-florida' },
-                contactPerson: 'Program Manager',
-                relevance: 'Creates opportunities for one-to-one friendships, integrated employment, and leadership development for people with intellectual and developmental disabilities (IDD).',
-                category: "Community / Government",
-                specializations: ["Developmental & Intellectual", "Physical & Medical"]
-            }
-            ];
+            // This is the URL to your data file on GitHub.
+            // You will need to replace this with your actual URL after uploading the files.
+            const DATA_URL = 'referral_sources.json';
 
-            const allSpecializations = [...new Set(referralSources.flatMap(s => s.specializations))].sort();
+            let referralSources = [];
+            let allSpecializations = [];
 
             const searchInput = document.getElementById('search-input');
             const categoryFilter = document.getElementById('category-filter');
             const specializationFiltersContainer = document.getElementById('specialization-filters');
             const resultsGrid = document.getElementById('results-grid');
             const resultsCount = document.getElementById('results-count');
+            const loadingState = document.getElementById('loading-state');
+            const resultsContent = document.getElementById('results-content');
             
             const tabDirectory = document.getElementById('tab-directory');
             const tabHistory = document.getElementById('tab-history');
@@ -392,7 +312,6 @@
             const importFile = document.getElementById('import-file');
             const shareBtn = document.getElementById('share-btn');
 
-
             let categoryChart, specializationChart;
             let userData = {};
             let currentEditingId = null;
@@ -402,6 +321,31 @@
                 category: 'all',
                 specializations: []
             };
+
+            async functioninitializeApp() {
+                try {
+                    const response = await fetch(DATA_URL);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    referralSources = await response.json();
+                    
+                    allSpecializations = [...new Set(referralSources.flatMap(s => s.specializations))].sort();
+                    
+                    loadUserData();
+                    initSpecializationFilters();
+                    setupCharts();
+                    render();
+                    
+                    loadingState.classList.add('hidden');
+                    resultsContent.classList.remove('hidden');
+
+                } catch (error) {
+                    loadingState.innerHTML = `<p class="text-red-500 font-semibold">Error: Could not load the referral directory.<br>Please check the DATA_URL in the script and make sure the JSON file is accessible.</p>`;
+                    console.error("Failed to fetch referral sources:", error);
+                }
+            }
+
 
             function initSpecializationFilters() {
                 specializationFiltersContainer.innerHTML = allSpecializations.map(spec => `
@@ -413,8 +357,8 @@
             }
 
             function createCard(source) {
-                const sourceData = userData[source.id] || { notes: '', contacts: [] };
-                const hasData = sourceData.notes || sourceData.contacts.length > 0;
+                const sourceData = userData[source.id] || { notes: [], contacts: [] };
+                const hasData = (sourceData.notes && sourceData.notes.length > 0) || (sourceData.contacts && sourceData.contacts.length > 0);
                 
                 return `
                     <div class="glass-panel p-5 sm:p-6 rounded-3xl shadow-lg flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
@@ -460,6 +404,7 @@
             }
 
             function render() {
+                if (!referralSources.length) return;
                 const filteredSources = referralSources.filter(source => {
                     const searchMatch = source.name.toLowerCase().includes(state.searchTerm.toLowerCase());
                     const categoryMatch = state.category === 'all' || source.category === state.category;
@@ -479,11 +424,11 @@
                     if (!sourceInfo) continue;
 
                     const data = userData[id];
-                    if (data.notes || (data.contacts && data.contacts.length > 0)) {
+                    if ((data.notes && data.notes.length > 0) || (data.contacts && data.contacts.length > 0)) {
                         historyItems.push({
                             name: sourceInfo.name,
-                            notes: data.notes,
-                            contacts: data.contacts
+                            notes: data.notes || [],
+                            contacts: data.contacts || []
                         });
                     }
                 }
@@ -496,13 +441,20 @@
                 historyContent.innerHTML = historyItems.sort((a,b) => a.name.localeCompare(b.name)).map(item => `
                     <div class="bg-white/20 p-4 rounded-xl border border-white/20">
                         <h3 class="text-xl font-bold text-slate-800">${item.name}</h3>
-                        ${item.notes ? `
+                        ${item.notes.length > 0 ? `
                             <div class="mt-3">
                                 <h4 class="font-semibold text-slate-700">Notes:</h4>
-                                <p class="text-slate-600 whitespace-pre-wrap p-2 bg-white/20 rounded-md mt-1">${item.notes}</p>
+                                <div class="space-y-2 mt-1">
+                                ${[...item.notes].reverse().map(note => `
+                                    <div class="p-2 bg-white/20 rounded-md">
+                                        <p class="text-slate-600 whitespace-pre-wrap">${note.text}</p>
+                                        <p class="text-xs text-slate-500 text-right mt-1">by <strong>${note.by}</strong> on ${note.date}</p>
+                                    </div>
+                                `).join('')}
+                                </div>
                             </div>
                         ` : ''}
-                        ${item.contacts && item.contacts.length > 0 ? `
+                        ${item.contacts.length > 0 ? `
                             <div class="mt-3">
                                 <h4 class="font-semibold text-slate-700">Contact History:</h4>
                                 <div class="space-y-1 mt-1">
@@ -537,10 +489,10 @@
             function openModal(id, name) {
                 currentEditingId = id;
                 if (!userData[id]) {
-                    userData[id] = { notes: '', contacts: [] };
+                    userData[id] = { notes: [], contacts: [] };
                 }
                 modalTitle.textContent = name;
-                modalNotes.value = userData[id].notes || '';
+                modalNotes.value = ''; // Clear textarea for new note
                 renderContactList();
                 notesModal.classList.add('active');
             }
@@ -647,11 +599,29 @@
 
             modalSaveBtn.addEventListener('click', () => {
                 if (currentEditingId) {
-                    userData[currentEditingId].notes = modalNotes.value;
-                    saveUserData();
-                    render();
+                    const noteText = modalNotes.value.trim();
+                    const author = prompt("Please enter your name to log this note:", localStorage.getItem('tntUserName') || '');
+
+                    if (author) {
+                        localStorage.setItem('tntUserName', author); // Remember the name for next time
+                        if (noteText) {
+                            const newNote = {
+                                text: noteText,
+                                by: author,
+                                date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                            };
+                            if (!userData[currentEditingId].notes) {
+                                userData[currentEditingId].notes = [];
+                            }
+                            userData[currentEditingId].notes.push(newNote);
+                        }
+                        saveUserData();
+                        render();
+                        closeModal();
+                    } else {
+                        alert("Author name is required to save a note.");
+                    }
                 }
-                closeModal();
             });
 
             modalAddContactBtn.addEventListener('click', () => {
@@ -664,8 +634,8 @@
                     userData[currentEditingId].contacts.push({ by: contactBy, date: today });
                     modalContactBy.value = '';
                     renderContactList();
-                    saveUserData(); // Save after adding contact
-                    render(); // Re-render to show green dot immediately
+                    saveUserData(); 
+                    render(); 
                 }
             });
 
@@ -676,8 +646,8 @@
                 const link = document.createElement('a');
                 const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
                 link.download = `T&T_Notes_${timestamp}.json`;
-                link.href = url;
                 document.body.appendChild(link);
+                link.href = url;
                 link.click();
                 document.body.removeChild(link);
                 URL.revokeObjectURL(url);
@@ -727,10 +697,8 @@
             tabDirectory.addEventListener('click', () => switchView('directory'));
             tabHistory.addEventListener('click', () => switchView('history'));
 
-            loadUserData();
-            initSpecializationFilters();
-            setupCharts();
-            render();
+            initializeApp();
+
         });
     </script>
 </body>
