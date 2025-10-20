@@ -5,14 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>T&T Serenity Care: Referral Source Navigator</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Chosen Palette: Serene Sky -->
-    <!-- Application Structure Plan: A three-tab single-page application. All data is now self-contained within this file for maximum reliability and offline use. 1) "Referral Directory" for organizations. 2) A "Coordinators" tab for the WSC list. 3) A "History" tab for a unified view of all user-entered data. -->
-    <!-- Visualization & Content Choices: Organizations use charts for visual summary. The WSC list is a dynamic, filterable card grid. A consistent modal is used for data entry and AI email drafting. History is a simple list for straightforward review. -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <!-- 
+      SENIOR SOFTWARE ENGINEER ARCHITECTURAL NOTES:
+      
+      APPLICATION STRUCTURE:
+      This is a single-file, vanilla JavaScript Single Page Application (SPA). The architecture prioritizes reliability, offline capability, 
+      and zero-latency data access by embedding all data directly into the HTML file. This eliminates asynchronous race conditions and dependencies 
+      on external network requests for core data. The application is structured into three main "views" (Referrals, Coordinators, History) 
+      controlled by a simple tab-based navigation system.
+
+      STATE MANAGEMENT:
+      Application state (e.g., filter values) is managed implicitly within the DOM. Persistent user-generated data (notes and contact logs) 
+      is managed via the browser's `localStorage`. This is suitable for a single-user, internal tool.
+
+      SCALABILITY & FUTURE MIGRATION PATH:
+      - Componentization: The rendering functions (`renderReferrals`, `renderCoordinators`) and event handling logic are precursors to modern 
+        framework components. If this app were to grow, the next logical step would be to migrate to a framework like React, Vue, or Svelte.
+        Each card template could become a reusable component (`<ReferralCard>`, `<CoordinatorCard>`).
+      - State Management: For a multi-user or more complex version, `localStorage` would be replaced by a centralized state management library 
+        (like Redux for React, Pinia for Vue) and a backend database (e.g., Firebase Firestore, Supabase) to sync data.
+      - Data Loading: The embedded JSON is a strategic choice for this specific use case. A larger application would revert to fetching data from a
+        backend API endpoint, likely using libraries like Axios or the native `fetch` API, with proper loading and error states managed within 
+        the UI components.
+      - AI Integration: The Gemini API integration is currently a front-end stub. A production implementation would involve a secure backend 
+        service (e.g., a Cloud Function) to handle API calls, protecting the API key.
+    -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -82,10 +103,16 @@
 
         .view {
             display: none;
+            animation: fadeIn 0.5s ease-in-out;
         }
 
         .view.active {
             display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .chart-container {
@@ -127,14 +154,11 @@
         <header class="text-center mb-8">
             <h1 class="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">T&T Serenity Care</h1>
             <p class="text-lg sm:text-xl text-slate-700 mt-2">Referral Source & Coordinator Navigator</p>
-            <div class="mt-4 max-w-4xl mx-auto text-slate-600">
-                <p>This interactive tool provides a curated list of potential referral sources and support coordinators. Use the tabs and filters below to explore contacts aligned with T&T Serenity Care's services.</p>
-            </div>
         </header>
 
         <nav class="flex justify-center mb-8 sm:mb-12">
             <div class="glass-panel p-1.5 sm:p-2 rounded-xl shadow-md flex space-x-1 sm:space-x-2">
-                <div id="tab-directory" class="nav-tab">Referrals</div>
+                <div id="tab-referrals" class="nav-tab">Referrals</div>
                 <div id="tab-coordinators" class="nav-tab active">Coordinators</div>
                 <div id="tab-history" class="nav-tab">History</div>
             </div>
@@ -142,135 +166,107 @@
 
         <main>
             <!-- View 1: Referral Directory -->
-            <div id="view-directory" class="view">
+            <div id="view-referrals" class="view">
                 <!-- Filter Controls -->
                 <section id="filters-referrals" class="glass-panel p-4 sm:p-6 rounded-3xl shadow-lg mb-8">
                     <h2 class="text-xl font-semibold mb-4 text-slate-800">Filter and Search Organizations</h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <!-- Search -->
                         <div class="md:col-span-1">
                             <label for="search-input-referrals" class="block text-sm font-medium text-slate-700 mb-1">Search by Name</label>
                             <input type="text" id="search-input-referrals" placeholder="Enter organization name..." class="w-full p-3 rounded-xl border border-white/30 bg-white/50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
                         </div>
-                        <!-- Category Filter -->
                         <div class="md:col-span-1">
                             <label for="category-filter" class="block text-sm font-medium text-slate-700 mb-1">Filter by Category</label>
-                            <select id="category-filter" class="w-full p-3 rounded-xl border border-white/30 bg-white/50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
-                                <option value="all">All Categories</option>
-                                <option value="Condition-Specific Non-Profit / Support Group">Non-Profits & Support Groups</option>
-                                <option value="Medical / Healthcare">Medical & Healthcare</option>
-                                <option value="Community / Government">Community & Government</option>
-                            </select>
+                            <select id="category-filter" class="w-full p-3 rounded-xl border border-white/30 bg-white/50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"></select>
                         </div>
-                         <!-- Specialization Filter -->
                         <div class="md:col-span-3">
                              <label class="block text-sm font-medium text-slate-700 mb-2">Filter by Specialization</label>
-                            <div id="specialization-filters" class="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap gap-x-4 gap-y-3 sm:gap-x-6">
-                            </div>
+                            <div id="specialization-filters" class="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap gap-x-4 gap-y-3 sm:gap-x-6"></div>
                         </div>
                     </div>
                 </section>
                 
-                 <!-- Data Management -->
-                <section id="data-management" class="glass-panel p-4 sm:p-6 rounded-3xl shadow-lg mb-8">
+                <!-- Data Management -->
+                <section class="glass-panel p-4 sm:p-6 rounded-3xl shadow-lg mb-8">
                     <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div class="text-slate-800 text-center md:text-left">
-                            <h2 class="text-xl font-semibold">Data Management & Sharing</h2>
-                            <p class="text-sm text-slate-600 mt-1 max-w-xl">Use **Share via Email** for team updates. The **Import/Export** buttons are for manual backups or transfers.</p>
+                            <h2 class="text-xl font-semibold">Data Management</h2>
+                            <p class="text-sm text-slate-600 mt-1 max-w-xl">Export your notes for backup or import a previous backup file.</p>
                         </div>
-                        <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto mt-4 md:mt-0">
-                            <button id="import-btn" class="bg-blue-500 text-white font-bold py-3 px-5 rounded-lg hover:bg-blue-600 transition duration-300 w-full sm:w-auto">Import</button>
-                            <input type="file" id="import-file" class="hidden" accept=".json">
-                            <button id="export-btn" class="bg-gray-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-gray-700 transition duration-300 w-full sm:w-auto">Export</button>
-                            <button id="share-btn" class="bg-green-500 text-white font-bold py-3 px-5 rounded-lg hover:bg-green-600 transition duration-300 w-full sm:w-auto">Share via Email</button>
+                        <div class="flex items-center gap-3">
+                            <button id="import-btn" class="bg-blue-500 text-white font-bold py-3 px-5 rounded-lg hover:bg-blue-600 transition">Import Notes</button>
+                            <input type="file" id="import-file-input" class="hidden" accept=".json">
+                            <button id="export-btn" class="bg-gray-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-gray-700 transition">Export Notes</button>
                         </div>
                     </div>
                 </section>
 
                 <!-- Dashboard -->
-                <section id="dashboard" class="mb-8">
+                <section class="mb-8">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div class="glass-panel p-4 sm:p-6 rounded-3xl shadow-lg">
                             <h3 class="text-lg font-semibold text-center mb-4 text-slate-800">Sources by Category</h3>
-                             <div class="chart-container">
-                                <canvas id="categoryChart"></canvas>
-                            </div>
+                             <div class="chart-container"><canvas id="categoryChart"></canvas></div>
                         </div>
                         <div class="glass-panel p-4 sm:p-6 rounded-3xl shadow-lg">
                             <h3 class="text-lg font-semibold text-center mb-4 text-slate-800">Sources by Specialization</h3>
-                             <div class="chart-container">
-                                <canvas id="specializationChart"></canvas>
-                            </div>
+                             <div class="chart-container"><canvas id="specializationChart"></canvas></div>
                         </div>
                     </div>
                 </section>
 
                 <!-- Results -->
-                <section id="results-referrals">
-                     <div id="results-content-referrals">
-                        <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 px-2 gap-2">
-                            <h2 class="text-2xl font-semibold text-slate-900">Referral Sources</h2>
-                            <div class="text-left sm:text-right">
-                                <span id="results-count-referrals" class="font-bold text-slate-800 text-lg"></span>
-                                <span class="text-slate-600">organizations found</span>
-                            </div>
-                        </div>
-                        <div id="results-grid-referrals" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <section>
+                    <div class="flex justify-between items-center mb-4 px-2">
+                        <h2 class="text-2xl font-semibold text-slate-900">Referral Sources</h2>
+                        <div>
+                            <span id="results-count-referrals" class="font-bold text-slate-800 text-lg"></span>
+                            <span class="text-slate-600"> organizations found</span>
                         </div>
                     </div>
+                    <div id="results-grid-referrals" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
                 </section>
             </div>
             
             <!-- View 2: Coordinators -->
             <div id="view-coordinators" class="view active">
-                 <!-- Filter Controls -->
-                <section id="filters-coordinators" class="glass-panel p-4 sm:p-6 rounded-3xl shadow-lg mb-8">
+                <section class="glass-panel p-4 sm:p-6 rounded-3xl shadow-lg mb-8">
                     <h2 class="text-xl font-semibold mb-4 text-slate-800">Filter and Search Coordinators</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Search -->
-                        <div class="md:col-span-1">
+                        <div>
                             <label for="search-input-coordinators" class="block text-sm font-medium text-slate-700 mb-1">Search by Name or Agency</label>
                             <input type="text" id="search-input-coordinators" placeholder="Enter name or agency..." class="w-full p-3 rounded-xl border border-white/30 bg-white/50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
                         </div>
-                        
-                         <!-- County Filter -->
-                        <div class="md:col-span-1">
+                        <div>
                              <label for="county-filter" class="block text-sm font-medium text-slate-700 mb-1">Filter by County</label>
-                             <select id="county-filter" class="w-full p-3 rounded-xl border border-white/30 bg-white/50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
-                                <option value="all">All Counties</option>
-                             </select>
+                             <select id="county-filter" class="w-full p-3 rounded-xl border border-white/30 bg-white/50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"></select>
                         </div>
                     </div>
                 </section>
-
-                <!-- Results -->
-                <section id="results-coordinators">
-                    <div id="results-content-coordinators">
-                        <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 px-2 gap-2">
-                            <h2 class="text-2xl font-semibold text-slate-900">Support Coordinators</h2>
-                            <div class="text-left sm:text-right">
-                                <span id="results-count-coordinators" class="font-bold text-slate-800 text-lg"></span>
-                                <span class="text-slate-600">coordinators found</span>
-                            </div>
-                        </div>
-                        <div id="results-grid-coordinators" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <section>
+                    <div class="flex justify-between items-center mb-4 px-2">
+                        <h2 class="text-2xl font-semibold text-slate-900">Support Coordinators</h2>
+                        <div>
+                            <span id="results-count-coordinators" class="font-bold text-slate-800 text-lg"></span>
+                            <span class="text-slate-600"> coordinators found</span>
                         </div>
                     </div>
+                    <div id="results-grid-coordinators" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
                 </section>
             </div>
 
-
             <!-- View 3: Log & Notes History -->
             <div id="view-history" class="view">
-                <section id="history-log" class="glass-panel p-4 sm:p-6 rounded-3xl shadow-lg">
+                <section class="glass-panel p-4 sm:p-6 rounded-3xl shadow-lg">
                     <h2 class="text-2xl font-semibold text-slate-900 mb-4">Combined Log & Notes History</h2>
                     <div id="history-content" class="space-y-6 max-h-[80vh] overflow-y-auto pr-2 sm:pr-4">
+                        <p id="history-placeholder" class="text-slate-600 text-center py-8">No notes or contact logs have been saved yet.</p>
                     </div>
                 </section>
             </div>
         </main>
         
-        <div id="update-notice-container" class="fixed bottom-4 right-4 z-50"></div>
+        <div id="toast-container" class="fixed bottom-4 right-4 z-50"></div>
 
         <footer class="text-center mt-12 py-4">
             <p class="text-white/70">&copy; 2025 T&T Serenity Care | Data compiled for internal use.</p>
@@ -284,28 +280,20 @@
                 <h2 id="modal-title" class="text-xl sm:text-2xl font-bold text-slate-900">Log & Notes</h2>
                 <button id="modal-close-btn" class="text-slate-600 hover:text-slate-900 transition text-2xl">&times;</button>
             </div>
-            
             <div class="flex-grow overflow-y-auto pr-2">
-                <!-- Notes -->
                 <div>
                     <label for="modal-notes" class="block text-sm font-medium text-slate-700 mb-1">Notes</label>
                     <textarea id="modal-notes" rows="6" class="w-full p-3 rounded-xl border border-white/30 bg-white/50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition" placeholder="Add general notes here..."></textarea>
                 </div>
-
-                <!-- Contact Log -->
                 <div class="mt-6">
                     <h3 class="font-semibold text-slate-800 mb-2">Contact Log</h3>
-                    <div id="modal-contact-list" class="space-y-2 mb-4">
-                        <!-- Contact items will be injected here -->
-                    </div>
+                    <div id="modal-contact-list" class="space-y-2 mb-4"></div>
                     <div class="flex flex-col sm:flex-row gap-2 items-center">
                         <input type="text" id="modal-contact-by" placeholder="Your Name" class="w-full sm:flex-grow p-3 rounded-xl border border-white/30 bg-white/50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
                         <button id="modal-add-contact-btn" class="bg-blue-500 text-white font-semibold py-3 px-5 rounded-lg hover:bg-blue-600 transition w-full sm:w-auto">Log Contact</button>
                     </div>
                 </div>
             </div>
-
-            <!-- Modal Actions -->
             <div class="mt-6 pt-4 border-t border-white/30">
                 <button id="modal-save-btn" class="bg-green-500 text-white font-bold py-3 px-5 rounded-lg hover:bg-green-600 transition w-full">Save and Close</button>
             </div>
@@ -316,29 +304,861 @@
     <div id="gemini-modal" class="modal-overlay p-4">
         <div class="modal-content glass-panel p-5 sm:p-8 rounded-3xl shadow-2xl w-full max-w-sm sm:max-w-3xl max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center mb-4">
-                <h2 id="gemini-modal-title" class="text-xl sm:text-2xl font-bold text-slate-900 flex items-center">
-                    ✨ AI Email Assistant
-                </h2>
+                <h2 id="gemini-modal-title" class="text-xl sm:text-2xl font-bold text-slate-900 flex items-center">✨ AI Email Assistant</h2>
                 <button id="gemini-modal-close-btn" class="text-slate-600 hover:text-slate-900 transition text-2xl">&times;</button>
             </div>
-            
-            <div id="gemini-modal-content" class="flex-grow overflow-y-auto pr-2">
-                <!-- Gemini content will be injected here -->
-            </div>
-
-            <!-- Modal Actions -->
-            <div id="gemini-modal-actions" class="mt-6 pt-4 border-t border-white/30 text-right">
+            <div id="gemini-modal-content" class="flex-grow overflow-y-auto pr-2 bg-white/50 rounded-lg p-4 text-slate-800"></div>
+            <div class="mt-6 pt-4 border-t border-white/30 text-right">
                  <button id="gemini-copy-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition">Copy Text</button>
             </div>
         </div>
     </div>
 
-
     <script>
-        // Note: Full script is redacted for brevity.
-        // The complete, bug-fixed script, including the full 212-coordinator
-        // and 14-organization fallback lists, is in the downloadable file.
-    </script>
+    // =================================================================================
+    // DATA STORE
+    // All application data is embedded here to ensure offline functionality and
+    // prevent race conditions from asynchronous loading.
+    // =================================================================================
+    const referralSources = [
+        {"id":"cfl-autism-center","name":"UCF Center for Autism & Related Disabilities (CARD)","address":"4000 Central Florida Blvd, Orlando, FL 32816","contact":{"phone":"407-823-6001","email":"ucfcard@ucf.edu","website":"https://ucf-card.org/"},"contactPerson":"Program Director","relevance":"Provides resources and support for individuals with Autism Spectrum Disorders from birth through adulthood.","category":"Condition-Specific Non-Profit / Support Group","specializations":["Autism Spectrum Disorders","Developmental & Intellectual"]},
+        {"id":"down-syndrome-assoc-cf","name":"Down Syndrome Association of Central Florida","address":"204 N Westmonte Dr, Altamonte Springs, FL 32714","contact":{"phone":"407-478-5621","email":"info@dsacf.org","website":"https://www.dsacf.org/"},"contactPerson":"Executive Director","relevance":"Offers support, resources, and programs for individuals with Down Syndrome and their families.","category":"Condition-Specific Non-Profit / Support Group","specializations":["Intellectual Disabilities","Developmental & Intellectual"]},
+        {"id":"cerebral-palsy-cf","name":"United Cerebral Palsy of Central Florida","address":"332 N Laurel Ave, Orlando, FL 32801","contact":{"phone":"407-852-3300","email":"N/A","website":"https://www.ucpcfl.org/"},"contactPerson":"Family Services Coordinator","relevance":"Provides comprehensive services including therapy, education, and support for individuals with Cerebral Palsy and other disabilities.","category":"Condition-Specific Non-Profit / Support Group","specializations":["Cerebral Palsy","Developmental & Intellectual","Physical & Medical"]},
+        {"id":"nemours-childrens","name":"Nemours Children's Hospital, Florida","address":"6535 Nemours Pkwy, Orlando, FL 32827","contact":{"phone":"407-567-4000","email":"N/A","website":"https://www.nemours.org/locations/nemours-childrens-hospital-florida"},"contactPerson":"Neurology Department / Social Work Dept.","relevance":"Specialized pediatric hospital with departments for neurology, developmental medicine, and complex medical needs.","category":"Medical / Healthcare","specializations":["Epilepsy","Chronic Medical Conditions","Cerebral Palsy","Spina Bifida","Hearing and Visual Impairaments"]},
+        {"id":"adventhealth-rehab","name":"AdventHealth Rehabilitation Center","address":"601 E Rollins St, Orlando, FL 32803","contact":{"phone":"407-303-6611","email":"N/A","website":"https://www.adventhealth.com/hospital/adventhealth-orlando/rehabilitation-and-physical-therapy"},"contactPerson":"Patient Navigator / Rehab Services","relevance":"Offers inpatient and outpatient physical, occupational, and speech therapy for adults and children with mobility impairments and neurological conditions.","category":"Medical / Healthcare","specializations":["Mobility Impairments","Physical & Medical"]},
+        {"id":"orlando-health-arnold-palmer","name":"Orlando Health Arnold Palmer Hospital for Children","address":"92 W Miller St, Orlando, FL 32806","contact":{"phone":"321-841-5111","email":"N/A","website":"https://www.arnoldpalmerhospital.com/"},"contactPerson":"Developmental Center for Infants & Children","relevance":"Top-tier children's hospital with comprehensive services for complex medical needs, developmental delays, and chronic conditions.","category":"Medical / Healthcare","specializations":["Chronic Medical Conditions","Developmental & Intellectual","Physical & Medical"]},
+        {"id":"apd-central-region","name":"Agency for Persons with Disabilities (APD) - Central Region","address":"400 W Robinson St, Orlando, FL 32801","contact":{"phone":"407-245-0440","email":"N/A","website":"https://apd.myflorida.com/region/central/"},"contactPerson":"Waiver Support Coordinator Supervisor","relevance":"State agency responsible for coordinating services for Floridians with developmental disabilities, including waiver programs.","category":"Community / Government","specializations":["Intellectual Disabilities","Autism Spectrum Disorders","Cerebral Palsy","Spina Bifida","Prader-Willi Syndrome","Dual Diagnosis"]},
+        {"id":"center-independent-living-cf","name":"Center for Independent Living in Central Florida","address":"720 N Denning Dr, Winter Park, FL 32789","contact":{"phone":"407-623-1070","email":"info@cilorlando.org","website":"https://cilorlando.org/"},"contactPerson":"Information and Referral Specialist","relevance":"Provides advocacy, resources, and skills training for people with all types of disabilities to live more independently.","category":"Community / Government","specializations":["Mobility Impairments","Hearing and Visual Impairaments","Developmental & Intellectual","Physical & Medical"]},
+        {"id":"best-buddies-cf","name":"Best Buddies in Central Florida","address":"111 N Orange Ave #770, Orlando, FL 32801","contact":{"phone":"407-898-0028","email":"centralflorida@bestbuddies.org","website":"https://www.bestbuddies.org/florida/central-florida"},"contactPerson":"Program Manager","relevance":"Creates opportunities for one-to-one friendships, integrated employment, and leadership development for people with intellectual and developmental disabilities (IDD).","category":"Community / Government","specializations":["Developmental & Intellectual","Physical & Medical"]},
+        {"id":"the-arc-sunrise","name":"The Arc Sunrise of Central Florida","address":"100 S. Main Street, Leesburg, FL 34748","contact":{"phone":"352-326-2211","email":"N/A","website":"https://www.arcsunrise.org/"},"contactPerson":"Director of Services","relevance":"Provides residential, employment, and life skills training for adults with intellectual and developmental disabilities in Lake County.","category":"Community / Government","specializations":["Intellectual Disabilities","Developmental & Intellectual","Dual Diagnosis"]},
+        {"id":"early-learning-lake","name":"Early Learning Coalition of Lake County","address":"1300 Citizens Blvd, Leesburg, FL 34748","contact":{"phone":"352-435-0566","email":"N/A","website":"https://www.elclc.org/"},"contactPerson":"Inclusion Specialist","relevance":"Offers resources and support for early childhood development, including programs for children with special needs and developmental delays.","category":"Community / Government","specializations":["Developmental & Intellectual"]},
+        {"id":"lakeland-regional-neuro","name":"Lakeland Regional Health - Neurology","address":"1324 Lakeland Hills Blvd, Lakeland, FL 33805","contact":{"phone":"863-284-5000","email":"N/A","website":"https://www.mylrh.org/neurosciences/"},"contactPerson":"Patient Care Coordinator","relevance":"Major regional hospital with a dedicated neuroscience and neurology department treating conditions like Epilepsy and Cerebral Palsy.","category":"Medical / Healthcare","specializations":["Epilepsy","Cerebral Palsy","Physical & Medical"]},
+        {"id":"center-for-autism-polk","name":"The Center for Autism and Related Disabilities (CARD) at USF - Polk County","address":"Florida Polytechnic University, 4700 Research Way, Lakeland, FL 33805","contact":{"phone":"813-974-2532","email":"card-usf@usf.edu","website":"https://card-usf.fmhi.usf.edu/"},"contactPerson":"Polk County Outreach Coordinator","relevance":"Satellite office of USF CARD, providing direct assistance and resources to individuals and families affected by autism in Polk County.","category":"Condition-Specific Non-Profit / Support Group","specializations":["Autism Spectrum Disorders","Developmental & Intellectual"]},
+        {"id":"new-vision-for-independence","name":"New Vision for Independence","address":"224 N. Main Ave, Groveland, FL 34736","contact":{"phone":"352-435-5040","email":"info@newvisionfl.org","website":"https://newvisionfl.org/"},"contactPerson":"Client Services Manager","relevance":"Provides training and support for individuals with low vision or blindness in Lake and Sumter counties, promoting independence.","category":"Condition-Specific Non-Profit / Support Group","specializations":["Hearing and Visual Impairaments","Physical & Medical"]}
+    ];
+    
+    const supportCoordinators = [
+        {"id":"wsc_1","name":"Andrew Miles","agency":"Achievable Abilities Support Services, LLC","phone":"704-779-2177","email":"drew.wsc1@gmail.com","counties":["Hernando"]},
+        {"id":"wsc_2","name":"Jenny Snyder","agency":"Achievable Abilities Support Services, LLC","phone":"941-545-3696","email":"jennysnyderwsc@gmail.com","counties":[]},
+        {"id":"wsc_3","name":"Ryan Connors","agency":"Achievable Abilities Support Services, LLC","phone":"863-709-7510","email":"ryanconnorswsc@gmail.com","counties":["Polk","Highland"]},
+        {"id":"wsc_4","name":"Ashley Dukes","agency":"Achievable Abilities Support Services, LLC","phone":"315-667-0097","email":"ashleyxmadola@aol.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_5","name":"Jamie Boyd","agency":"Achievable Abilities Support Services, LLC","phone":"863-585-8295","email":"jamieboydwsc@gmail.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_6","name":"Maxine Jimenez","agency":"Active Group Supports","phone":"407-463-5148","email":"lanamax49@gmail.com","counties":["Orange","Seminole"]},
+        {"id":"wsc_7","name":"Victor Galan","agency":"Active Group Supports","phone":"407-310-2588","email":"victorwsc@yahoo.com","counties":["Orange","Seminole"]},
+        {"id":"wsc_8","name":"Marving A Jimenez","agency":"Active Group Supports","phone":null,"email":"activegs2021@gmail.com","counties":["Orange","Seminole"]},
+        {"id":"wsc_9","name":"Michelle Allen","agency":"Allen & Associates","phone":"321-615-5680","email":"allen4mwsc@yahoo.com","counties":["Brevard"]},
+        {"id":"wsc_10","name":"Tara Downs","agency":"Space Coast Support Coordinators","phone":"321-427-1101","email":"wscdowns@gmail.com","counties":["Brevard"]},
+        {"id":"wsc_11","name":"Anthony Peck","agency":"Space Coast Support Coordinators","phone":"321-557-2121","email":"anthony.j.peck.1975@gmail.com","counties":["Brevard"]},
+        {"id":"wsc_12","name":"Eric Allen","agency":"Space Coast Support Coordinators","phone":"321-750-4334","email":"e_allen101@yahoo.com","counties":["Brevard"]},
+        {"id":"wsc_13","name":"Dustie Huff","agency":"Support Advocates, LLC","phone":"585-622-5298","email":"dustie@supportadvocates.com","counties":["Seminole"]},
+        {"id":"wsc_14","name":"Olivia Diebate","agency":"Support Advocates, LLC","phone":"407-970-9884","email":"Olivia@supportadvocates.com","counties":["Seminole","Osceola","Orange"]},
+        {"id":"wsc_15","name":"Keri L. Robinson","agency":"Support Advocates, LLC","phone":"304-617-6482","email":"keri@supportadvocates.com","counties":["Orange"]},
+        {"id":"wsc_16","name":"Gerda Mothersil","agency":"Support Advocates, LLC","phone":"321-277-6195","email":"gerda@supportadvocates.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_17","name":"Marci Taylor","agency":"Support Advocates, LLC","phone":"407-920-5623","email":"marci@supportadvocates.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_18","name":"Sarah Donalson","agency":"Support System","phone":"321-615-9988","email":"sarah@mysupportsystem.org","counties":["Brevard"]},
+        {"id":"wsc_19","name":"Angela Caito","agency":"Support System","phone":"321-368-2415","email":"angela@mysupportsystem.org","counties":["Brevard"]},
+        {"id":"wsc_20","name":"Jennifer Lussier","agency":"Support System","phone":"321-480-1627","email":"jennifer@mysupportsystem.org","counties":["Brevard"]},
+        {"id":"wsc_21","name":"Amy Marcum","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"amymarcum@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_22","name":"Angela Peterson","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"angelapeterson@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_23","name":"Ashley Craig","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"ashleycraig@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_24","name":"Brenda Walker","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"brendawalker@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_25","name":"Christa Smith","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"christasmith@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_26","name":"Christie Barfield","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"christiebarfield@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_27","name":"Cristina Barfield","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"cristinabarfield@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_28","name":"Cynthia (Cindy) Marcum","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"cindymarcum@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_29","name":"Damaris Lopez","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"damarislopez@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_30","name":"Elaine Grant","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"elainegrant@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_31","name":"Elizabeth (Lisa) Harris","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"lisaharris@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_32","name":"Ivonne Ortiz","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"ivonneortiz@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_33","name":"Jannette Santiago","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"jannettesantiago@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_34","name":"Jeanette Call","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"jeanettecall@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_35","name":"Jennifer (Jen) Smith","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"jensmith@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_36","name":"Jennifer Kuffel","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"jenniferkuffel@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_37","name":"Jill Bracewell","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"jillbracewell@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_38","name":"JoAnn Goodall","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"joanngoodall@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_39","name":"Jorge Ortiz","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"jorgeortiz@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_40","name":"Kaitlin Jones","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"kaitlinjones@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_41","name":"Kallie Smith","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"kalliesmith@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_42","name":"Kathleen (Kathy) Roberts","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"kathyroberts@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_43","name":"Kayla Harris","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"kaylaharris@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_44","name":"Kimberly (Kim) Butler","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"kimbutler@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_45","name":"Leah Walker","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"leahwalker@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_46","name":"Lisandra Torres","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"lisandratorres@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_47","name":"Marisela Salgado","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"mariselasalgado@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_48","name":"Martha Smith","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"marthasmith@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_49","name":"Nancy Jo Taylor","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"nancyjotaylor@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_50","name":"Nicole Wilson","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"nicolewilson@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_51","name":"Nitzaida (Nitzie) Morales","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"nitziemoraless@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_52","name":"Patricia (Patty) Lopez","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"pattylopez@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_53","name":"Peggy Music","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"peggymusic@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_54","name":"Raychel Burnette","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"raychelburnette@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_55","name":"Sabrina Simpson","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"sabrinasimpson@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_56","name":"Sara Strickland","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"sarastrickland@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_57","name":"Shantell King","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"shantellking@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_58","name":"Tricia Gordon","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"triciagordon@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_59","name":"Yashira Flores","agency":"Suncoast Case Management, Inc.","phone":"863-709-1739","email":"yashiraflores@suncoastcase.com","counties":["Polk","Highlands","Hardee"]},
+        {"id":"wsc_60","name":"Alisha Mahabir","agency":"The Mentor Network","phone":"321-278-6563","email":"Alisha.Mahabir@thementornetwork.com","counties":["Orange"]},
+        {"id":"wsc_61","name":"Amanda Rodriguez","agency":"The Mentor Network","phone":"407-761-1250","email":"Amanda.Rodriguez3@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_62","name":"Annette Mandiville","agency":"The Mentor Network","phone":"321-663-0402","email":"Annette.Mandiville@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_63","name":"Dacosta Bethel","agency":"The Mentor Network","phone":"407-455-8025","email":"Dacosta.Bethel@thementornetwork.com","counties":["Orange","Seminole"]},
+        {"id":"wsc_64","name":"Dalila Garcia","agency":"The Mentor Network","phone":"407-360-7059","email":"Dalila.Garcia@thementornetwork.com","counties":["Osceola"]},
+        {"id":"wsc_65","name":"Damariselez Centeno","agency":"The Mentor Network","phone":"321-805-4424","email":"DamarisElez.Centeno@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_66","name":"Darlene Perez","agency":"The Mentor Network","phone":"407-734-2993","email":"Darlene.Perez@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_67","name":"Diana Quinones","agency":"The Mentor Network","phone":"407-285-0520","email":"Diana.Quinones@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_68","name":"Elisaul Cruz","agency":"The Mentor Network","phone":"407-556-9122","email":"Elisaul.Cruz@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_69","name":"Evelyn Garcia","agency":"The Mentor Network","phone":"407-431-4828","email":"Evelyn.Garcia@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_70","name":"Evelyn Velazquez","agency":"The Mentor Network","phone":"407-201-9032","email":"Evelyn.Velazquez@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_71","name":"Giselle Vargas","agency":"The Mentor Network","phone":"407-431-5079","email":"Giselle.Vargas@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_72","name":"Gladysbeth Validivieso","agency":"The Mentor Network","phone":"407-556-9029","email":"Gladysbeth.Valdivieso@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_73","name":"Guadalupe Servin","agency":"The Mentor Network","phone":"321-442-8873","email":"Guadalupe.Servin@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_74","name":"Ivelisse Hernandez","agency":"The Mentor Network","phone":"407-556-9018","email":"Ivelisse.Hernandez@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_75","name":"Jannette Castro","agency":"The Mentor Network","phone":"407-431-5073","email":"Jannette.Castro@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_76","name":"Jeanette Rodriguez","agency":"The Mentor Network","phone":"407-201-9036","email":"Jeanette.Rodriguez2@thementornetwork.com","counties":["Osceola"]},
+        {"id":"wsc_77","name":"Josselyn Torres","agency":"The Mentor Network","phone":"407-556-9013","email":"Josselyn.Torres@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_78","name":"Julia Rosario","agency":"The Mentor Network","phone":"407-285-0523","email":"Julia.Rosario@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_79","name":"Katherine Gutierrez","agency":"The Mentor Network","phone":"407-556-9005","email":"Katherine.Gutierrez@thementornetwork.com","counties":["Osceola"]},
+        {"id":"wsc_80","name":"Lesliam Jordan","agency":"The Mentor Network","phone":"407-734-2976","email":"Lesliam.Jordan@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_81","name":"Linda Gonzalez","agency":"The Mentor Network","phone":"407-486-2007","email":"Linda.Gonzalez@thementornetwork.com","counties":["Orange"]},
+        {"id":"wsc_82","name":"Maria (Estella) Rodriguez","agency":"The Mentor Network","phone":"407-556-9118","email":"Maria.Rodriguez@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_83","name":"Marta Cruz","agency":"The Mentor Network","phone":"407-285-0524","email":"Marta.Cruz@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_84","name":"Melisa Lopez","agency":"The Mentor Network","phone":"321-278-6549","email":"Melisa.Lopez@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_85","name":"Miosotiz Beauchamp","agency":"The Mentor Network","phone":"407-556-9017","email":"Miosotiz.Beauchamp@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_86","name":"Nydia Sanchez","agency":"The Mentor Network","phone":"407-431-5074","email":"Nydia.Sanchez@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_87","name":"Paola Rodriguez","agency":"The Mentor Network","phone":"407-761-1249","email":"Paola.Rodriguez@thementornetwork.com","counties":["Osceola"]},
+        {"id":"wsc_88","name":"Ramonita Tirado","agency":"The Mentor Network","phone":"407-201-9035","email":"Ramonita.Tirado@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_89","name":"Sheyla Negron","agency":"The Mentor Network","phone":"407-431-5072","email":"Sheyla.Negron@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_90","name":"Suzanne Sibson","agency":"The Mentor Network","phone":"321-663-0401","email":"Suzanne.Sibson@thementornetwork.com","counties":["Orange","Seminole"]},
+        {"id":"wsc_91","name":"Vanessa Velez","agency":"The Mentor Network","phone":"407-431-5077","email":"Vanessa.Velez@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_92","name":"Victor Quinones","agency":"The Mentor Network","phone":"321-805-4422","email":"Victor.Quinones@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_93","name":"Vivian Lugo","agency":"The Mentor Network","phone":"407-201-9033","email":"Vivian.Lugo@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_94","name":"Xiomara (Joanne) Santiago","agency":"The Mentor Network","phone":"321-805-4423","email":"Xiomara.Santiago@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_95","name":"Yesenia Cruz","agency":"The Mentor Network","phone":"407-556-9119","email":"Yesenia.Cruz@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_96","name":"Yomarie Rodriguez","agency":"The Mentor Network","phone":"407-556-9034","email":"Yomarie.Rodriguez@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_97","name":"Ana Maria Torres","agency":"The Mentor Network","phone":"407-285-0525","email":"Ana.Torres@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_98","name":"Brenda Lopez","agency":"The Mentor Network","phone":"407-431-5078","email":"Brenda.Lopez@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_99","name":"Danielle Smith","agency":"The Mentor Network","phone":"321-278-6552","email":"Danielle.Smith@thementornetwork.com","counties":["Orange","Seminole"]},
+        {"id":"wsc_100","name":"Glenda Miranda","agency":"The Mentor Network","phone":"407-556-9022","email":"Glenda.Miranda@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_101","name":"Idalis Salva","agency":"The Mentor Network","phone":"407-556-9003","email":"Idalis.Salva@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_102","name":"Jasmine Vega","agency":"The Mentor Network","phone":"321-663-0403","email":"Jasmine.Vega@thementornetwork.com","counties":["Orange","Osceola","Seminole"]},
+        {"id":"wsc_103","name":"Yasmind Telesford","agency":"The Mentor Network","phone":"407-556-9026","email":"Yasmind.Telesford@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_104","name":"Carmen Rivera","agency":"The Mentor Network","phone":"407-431-5076","email":"Carmen.Rivera@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_105","name":"Maria (Tuty) Garcia","agency":"The Mentor Network","phone":"407-556-9006","email":"Maria.Garcia@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_106","name":"Nydia Dejesus","agency":"The Mentor Network","phone":"407-201-9031","email":"Nydia.Dejesus@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_107","name":"Rosemary Rodriguez","agency":"The Mentor Network","phone":"407-556-9021","email":"Rosemary.Rodriguez@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_108","name":"Maria (Ivonne) Ortiz","agency":"The Mentor Network","phone":"407-556-9121","email":"Maria.Ortiz@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_109","name":"Lydia Fontanez","agency":"The Mentor Network","phone":"407-734-2980","email":"Lydia.Fontanez@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_110","name":"Elias Diaz","agency":"The Mentor Network","phone":"407-734-2978","email":"Elias.Diaz@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_111","name":"Giselle (Gigi) Robles","agency":"The Mentor Network","phone":"407-431-5075","email":"Giselle.Robles@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_112","name":"Aida Luz","agency":"The Mentor Network","phone":"321-278-6550","email":"Aida.Luz@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_113","name":"Myriam Torres","agency":"The Mentor Network","phone":"321-278-6551","email":"Myriam.Torres@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_114","name":"Jannette Flores","agency":"The Mentor Network","phone":"407-556-9020","email":"Jannette.Flores@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_115","name":"Angela Nieves","agency":"The Mentor Network","phone":"407-556-9028","email":"Angela.Nieves@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_116","name":"Cynthia (Cindy) Droz","agency":"The Mentor Network","phone":"321-442-8871","email":"Cynthia.Droz@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_117","name":"Sonia Feliciano","agency":"The Mentor Network","phone":"407-734-2975","email":"Sonia.Feliciano@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_118","name":"Yariza Donado","agency":"The Mentor Network","phone":"407-556-9011","email":"Yariza.Donado@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_119","name":"Gretchen Rodriguez","agency":"The Mentor Network","phone":"321-805-4425","email":"gretchen.rodriguez@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_120","name":"Ana Delia","agency":"The Mentor Network","phone":"407-734-2981","email":"ana.delia@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_121","name":"Sonia Lopez","agency":"The Mentor Network","phone":"407-734-2994","email":"sonia.lopez@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_122","name":"Zulma Rivera","agency":"The Mentor Network","phone":"407-734-2977","email":"zulma.rivera@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_123","name":"Myriam Ortiz","agency":"The Mentor Network","phone":"321-805-4427","email":"myriam.ortiz@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_124","name":"Yolanda Rodriguez","agency":"The Mentor Network","phone":"321-805-4426","email":"yolanda.rodriguez@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_125","name":"Maria (Mary) Rodriguez","agency":"The Mentor Network","phone":"407-734-2992","email":"mary.rodriguez@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_126","name":"Natacha Lemy","agency":"The Mentor Network","phone":"321-442-8872","email":"natacha.lemy@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_127","name":"Carmen Delgado","agency":"The Mentor Network","phone":"407-761-1251","email":"carmen.delgado@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_128","name":"Jessica Hernandez","agency":"The Mentor Network","phone":"407-201-9034","email":"jessica.hernandez@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_129","name":"Lourdes Rodriguez","agency":"The Mentor Network","phone":"407-556-9023","email":"lourdes.rodriguez@thementornetwork.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_130","name":"Erica Ransom","agency":"True Supports Coordination","phone":"407-557-4100","email":"erica@truesc.org","counties":["Orange","Osceola","Seminole","Brevard"]},
+        {"id":"wsc_131","name":"Nadjy Germain","agency":"True Supports Coordination","phone":"407-557-4100","email":"nadjy@truesc.org","counties":["Orange","Osceola","Seminole","Brevard"]},
+        {"id":"wsc_132","name":"Vanessa Melendez","agency":"True Supports Coordination","phone":"407-557-4100","email":"vanessa@truesc.org","counties":["Orange","Osceola","Seminole","Brevard"]},
+        {"id":"wsc_133","name":"Laura (Paige) Rauth","agency":"Your Choice WSC","phone":"321-271-9669","email":"paigerauth@outlook.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_134","name":"Nancy Diaz","agency":"Your Choice WSC","phone":"407-451-4043","email":"nancydiazwsc@gmail.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_135","name":"Carla Rodriguez","agency":"Your Choice WSC","phone":"321-682-9755","email":"carlarodriguezwsc@gmail.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_136","name":"Ana Rodriguez","agency":"Your Choice WSC","phone":"407-953-5206","email":"anarodriguezwsc@gmail.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_137","name":"Catherine Hernandez","agency":"Your Choice WSC","phone":"407-953-5182","email":"catherinehernandezwsc@gmail.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_138","name":"Wanda Delgado","agency":"Your Choice WSC","phone":"321-278-8314","email":"wanda.delgado.wsc@gmail.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_139","name":"Danielle Moshier","agency":"Your Choice WSC","phone":"321-682-3536","email":"daniellemoshierwsc@gmail.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_140","name":"Carmen Perez","agency":"Your Choice WSC","phone":"321-442-0185","email":"carmenenidperez@gmail.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_141","name":"Kimberly Castillo","agency":"Your Choice WSC","phone":"321-662-3498","email":"castillowsc@gmail.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_142","name":"Jessica Navarro","agency":"Your Choice WSC","phone":"321-287-6804","email":"jessicanavarrowsc@gmail.com","counties":["Orange","Osceola"]},
+        {"id":"wsc_143","name":"Abby Rivera","agency":"Your Support Services","phone":"407-900-5561","email":"abby@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_144","name":"Ana Carrion","agency":"Your Support Services","phone":"407-900-5561","email":"ana@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_145","name":"Barbara Buchanan","agency":"Your Support Services","phone":"407-900-5561","email":"barbara@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_146","name":"Darlene Pabon","agency":"Your Support Services","phone":"407-900-5561","email":"darlene@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_147","name":"Dorcas Rivera","agency":"Your Support Services","phone":"407-900-5561","email":"dorcas@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_148","name":"Elizabeth Torres","agency":"Your Support Services","phone":"407-900-5561","email":"elizabeth@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_149","name":"Enid Ortiz","agency":"Your Support Services","phone":"407-900-5561","email":"enid@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_150","name":"Ivelisse Pagan","agency":"Your Support Services","phone":"407-900-5561","email":"ivelisse@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_151","name":"Jacqueline Lopez","agency":"Your Support Services","phone":"407-900-5561","email":"jacqueline@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_152","name":"Jessica Morales","agency":"Your Support Services","phone":"407-900-5561","email":"jessica@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_153","name":"Joanne Rodriguez","agency":"Your Support Services","phone":"407-900-5561","email":"joanne@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_154","name":"Kaitlyn Olivera","agency":"Your Support Services","phone":"407-900-5561","email":"kaitlyn@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_155","name":"Karla Rodriguez","agency":"Your Support Services","phone":"407-900-5561","email":"karla@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_156","name":"Luz Marina Vargas","agency":"Your Support Services","phone":"407-900-5561","email":"luz@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_157","name":"Maria (Charo) Rivera","agency":"Your Support Services","phone":"407-900-5561","email":"charo@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_158","name":"Maria Santiago","agency":"Your Support Services","phone":"407-900-5561","email":"maria@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_159","name":"Michelle Lopez","agency":"Your Support Services","phone":"407-900-5561","email":"michelle@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_160","name":"Mildred (Millie) Flores","agency":"Your Support Services","phone":"407-900-5561","email":"mildred@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_161","name":"Myrlene Denis","agency":"Your Support Services","phone":"407-900-5561","email":"myrlene@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_162","name":"Nancy Santiago","agency":"Your Support Services","phone":"407-900-5561","email":"nancy@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_163","name":"Norma Hernandez","agency":"Your Support Services","phone":"407-900-5561","email":"norma@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_164","name":"Sonia Lopez","agency":"Your Support Services","phone":"407-900-5561","email":"sonia@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_165","name":"Valerie Vega","agency":"Your Support Services","phone":"407-900-5561","email":"valerie@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_166","name":"Vanessa Rivera","agency":"Your Support Services","phone":"407-900-5561","email":"vanessa@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_167","name":"Vilmarie Ocasio","agency":"Your Support Services","phone":"407-900-5561","email":"vilmarie@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_168","name":"Wanda Cruz","agency":"Your Support Services","phone":"407-900-5561","email":"wanda@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_169","name":"Wanda Diaz","agency":"Your Support Services","phone":"407-900-5561","email":"wanda.d@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_170","name":"Wanda Ortiz","agency":"Your Support Services","phone":"407-900-5561","email":"wanda.o@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_171","name":"Yarinet Gonzalez","agency":"Your Support Services","phone":"407-900-5561","email":"yarinet@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_172","name":"Zulma Figueroa","agency":"Your Support Services","phone":"407-900-5561","email":"zulma@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_173","name":"Zulma Rivera","agency":"Your Support Services","phone":"407-900-5561","email":"zulma.r@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_174","name":"Lissette Velez","agency":"Your Support Services","phone":"407-900-5561","email":"lissette@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_175","name":"Krizia Tirado","agency":"Your Support Services","phone":"407-900-5561","email":"krizia@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_176","name":"Iris Ortiz","agency":"Your Support Services","phone":"407-900-5561","email":"iris@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_177","name":"Cynthia Santiago","agency":"Your Support Services","phone":"407-900-5561","email":"cynthia@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_178","name":"Ana Delis","agency":"Your Support Services","phone":"407-900-5561","email":"ana.d@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_179","name":"Brenda L Reyes","agency":"Your Support Services","phone":"407-900-5561","email":"brenda@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_180","name":"Cynthia Perez","agency":"Your Support Services","phone":"407-900-5561","email":"cynthia.p@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_181","name":"Evelyn Gonzalez","agency":"Your Support Services","phone":"407-900-5561","email":"evelyn@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_182","name":"Glorivee Lebron","agency":"Your Support Services","phone":"407-900-5561","email":"glorivee@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_183","name":"Giselle Rivera","agency":"Your Support Services","phone":"407-900-5561","email":"giselle@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_184","name":"Jomarys Valle","agency":"Your Support Services","phone":"407-900-5561","email":"jomarys@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_185","name":"Jennifer Cruz","agency":"Your Support Services","phone":"407-900-5561","email":"jennifer@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_186","name":"Jessica Cruz","agency":"Your Support Services","phone":"407-900-5561","email":"jessica.c@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_187","name":"Keyla Otero","agency":"Your Support Services","phone":"407-900-5561","email":"keyla@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_188","name":"Laura (Paige) Rauth","agency":"Your Support Services","phone":"407-900-5561","email":"paige@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_189","name":"Lizzette Gonzalez","agency":"Your Support Services","phone":"407-900-5561","email":"lizzette@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_190","name":"Lorraine Rosado","agency":"Your Support Services","phone":"407-900-5561","email":"lorraine@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_191","name":"Lucelenia Santos","agency":"Your Support Services","phone":"407-900-5561","email":"lucelenia@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_192","name":"Madeline Diaz","agency":"Your Support Services","phone":"407-900-5561","email":"madeline@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_193","name":"Mayra Alejandro","agency":"Your Support Services","phone":"407-900-5561","email":"mayra@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_194","name":"Migna Rivera","agency":"Your Support Services","phone":"407-900-5561","email":"migna@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_195","name":"Sandra Figueroa","agency":"Your Support Services","phone":"407-900-5561","email":"sandra@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_196","name":"Sonia Feliciano","agency":"Your Support Services","phone":"407-900-5561","email":"sonia.f@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_197","name":"Vanessa Aviles","agency":"Your Support Services","phone":"407-900-5561","email":"vanessa.a@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_198","name":"Yaritzza Aponte","agency":"Your Support Services","phone":"407-900-5561","email":"yaritzza@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_199","name":"Abigail Mercado","agency":"Your Support Services","phone":"407-900-5561","email":"abigail@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_200","name":"Alisha Rodriguez","agency":"Your Support Services","phone":"407-900-5561","email":"alisha@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_201","name":"Amy Rodriguez","agency":"Your Support Services","phone":"407-900-5561","email":"amy@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_202","name":"Aracelis Lopez","agency":"Your Support Services","phone":"407-900-5561","email":"aracelis@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_203","name":"Carmen Delgado","agency":"Your Support Services","phone":"407-900-5561","email":"carmen@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_204","name":"Claribel Rivera","agency":"Your Support Services","phone":"407-900-5561","email":"claribel@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_205","name":"Daisy Andino","agency":"Your Support Services","phone":"407-900-5561","email":"daisy@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_206","name":"Damaris Perez","agency":"Your Support Services","phone":"407-900-5561","email":"damaris@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_207","name":"Ednaris Salgado","agency":"Your Support Services","phone":"407-900-5561","email":"ednaris@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_208","name":"Elisaul Cruz","agency":"Your Support Services","phone":"407-900-5561","email":"elisaul@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_209","name":"Elizabeth Delgado","agency":"Your Support Services","phone":"407-900-5561","email":"elizabeth.d@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_210","name":"Erica Ransom","agency":"Your Support Services","phone":"407-900-5561","email":"erica@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_211","name":"Iris Rivera","agency":"Your Support Services","phone":"407-900-5561","email":"iris.r@yoursupportservices.org","counties":["Orange","Osceola"]},
+        {"id":"wsc_212","name":"Ivette Otero","agency":"Your Support Services","phone":"407-900-5561","email":"ivette@yoursupportservices.org","counties":["Orange","Osceola"]}
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // =========================================================================
+        // INITIALIZATION (Strict Order)
+        // 1. Initialize tabs to ensure UI is interactive.
+        // 2. Initialize and render content for each tab.
+        // =========================================================================
+        initializeTabs();
+        initializeAppReferrals();
+        initializeAppCoordinators();
+        
+        // Data Management Listeners
+        document.getElementById('import-btn').addEventListener('click', () => document.getElementById('import-file-input').click());
+        document.getElementById('import-file-input').addEventListener('change', handleImport);
+        document.getElementById('export-btn').addEventListener('click', handleExport);
+    });
+
+    // =============================================================================
+    // CORE APP LOGIC
+    // =============================================================================
+
+    let categoryChartInstance = null;
+    let specializationChartInstance = null;
+    let currentModalId = null; // Holds the ID for the currently open notes modal
+
+    /**
+     * Sets up the main tab navigation functionality.
+     */
+    function initializeTabs() {
+        const tabs = document.querySelectorAll('.nav-tab');
+        const views = document.querySelectorAll('.view');
+        
+        const switchTab = (tabId) => {
+            tabs.forEach(tab => tab.classList.remove('active'));
+            views.forEach(view => view.classList.remove('active'));
+
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            const activeView = document.getElementById(`view-${tabId}`);
+
+            if (activeTab) activeTab.classList.add('active');
+            if (activeView) activeView.classList.add('active');
+            
+            if (tabId === 'history') {
+                renderHistory();
+            }
+        };
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.id.replace('tab-', '');
+                switchTab(tabName);
+            });
+        });
+
+        // Default to coordinators tab as per instructions
+        switchTab('coordinators');
+    }
+
+    // --- REFERRALS SECTION ---
+
+    /**
+     * Initializes the entire Referrals tab.
+     */
+    function initializeAppReferrals() {
+        populateReferralFilters();
+        renderReferrals();
+        setupReferralEventListeners();
+        createReferralCharts();
+    }
+
+    /**
+     * Populates filter dropdowns and checkboxes for the Referrals tab.
+     */
+    function populateReferralFilters() {
+        const categories = [...new Set(referralSources.map(r => r.category))];
+        const specializations = [...new Set(referralSources.flatMap(r => r.specializations))].sort();
+        
+        const categoryFilter = document.getElementById('category-filter');
+        categoryFilter.innerHTML = '<option value="all">All Categories</option>';
+        categories.forEach(cat => {
+            categoryFilter.innerHTML += `<option value="${cat}">${cat}</option>`;
+        });
+
+        const specializationFilters = document.getElementById('specialization-filters');
+        specializationFilters.innerHTML = specializations.map(spec => `
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" value="${spec}" class="specialization-checkbox h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                <span class="text-sm text-slate-700">${spec}</span>
+            </label>
+        `).join('');
+    }
+    
+    /**
+     * Sets up event listeners for referral filters.
+     */
+    function setupReferralEventListeners() {
+        document.getElementById('search-input-referrals').addEventListener('input', renderReferrals);
+        document.getElementById('category-filter').addEventListener('change', renderReferrals);
+        document.getElementById('specialization-filters').addEventListener('change', renderReferrals);
+    }
+
+    /**
+     * Filters and renders the list of referral sources.
+     */
+    function renderReferrals() {
+        const grid = document.getElementById('results-grid-referrals');
+        const countEl = document.getElementById('results-count-referrals');
+        
+        const searchTerm = document.getElementById('search-input-referrals').value.toLowerCase();
+        const category = document.getElementById('category-filter').value;
+        const selectedSpecs = [...document.querySelectorAll('.specialization-checkbox:checked')].map(cb => cb.value);
+
+        const filtered = referralSources.filter(r => {
+            const nameMatch = !searchTerm || r.name.toLowerCase().includes(searchTerm);
+            const categoryMatch = category === 'all' || r.category === category;
+            const specMatch = selectedSpecs.length === 0 || selectedSpecs.every(spec => r.specializations.includes(spec));
+            return nameMatch && categoryMatch && specMatch;
+        });
+
+        countEl.textContent = filtered.length;
+        grid.innerHTML = filtered.length > 0 ? filtered.map(createReferralCardHTML).join('') : '<p class="col-span-full text-center text-slate-600">No matching referral sources found.</p>';
+        addCardEventListeners();
+    }
+
+    /**
+     * Generates the HTML for a single referral source card.
+     */
+    function createReferralCardHTML(referral) {
+        const noteData = getNoteData(referral.id);
+        const hasNotes = noteData.notes || noteData.contacts.length > 0;
+        
+        return `
+            <div class="glass-panel rounded-2xl p-5 shadow-lg flex flex-col h-full">
+                <div class="flex-grow">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-lg font-bold text-slate-900">${referral.name}</h3>
+                        ${hasNotes ? `<span class="text-2xl" title="Has Notes">📝</span>` : ''}
+                    </div>
+                    <p class="text-sm text-slate-600 mb-3">${referral.category}</p>
+                    <p class="text-sm text-slate-700 mb-4">${referral.relevance}</p>
+                    <div class="text-sm space-y-2 mb-4">
+                        <p><strong>Contact:</strong> ${referral.contactPerson || 'N/A'}</p>
+                        <p><strong>Phone:</strong> ${referral.contact.phone || 'N/A'}</p>
+                        <p><strong>Email:</strong> ${referral.contact.email !== 'N/A' ? `<a href="mailto:${referral.contact.email}" class="text-blue-600 hover:underline">${referral.contact.email}</a>` : 'N/A'}</p>
+                        <p><strong>Website:</strong> <a href="${referral.contact.website}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Visit Website</a></p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        ${referral.specializations.map(spec => `<span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">${spec}</span>`).join('')}
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-white/30 flex flex-wrap gap-2">
+                    <button class="action-btn-note flex-1 bg-gray-200 hover:bg-gray-300 text-slate-800 font-semibold py-2 px-4 rounded-lg transition" data-id="${referral.id}" data-name="${referral.name}">Add Note/Log</button>
+                    <button class="action-btn-gemini flex-1 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg transition" data-id="${referral.id}" data-type="referral">✨ Draft Email</button>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Creates/updates charts for the referral dashboard.
+     */
+    function createReferralCharts() {
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        const specializationCtx = document.getElementById('specializationChart').getContext('2d');
+
+        const categoryCounts = referralSources.reduce((acc, r) => {
+            acc[r.category] = (acc[r.category] || 0) + 1;
+            return acc;
+        }, {});
+
+        const specializationCounts = referralSources.flatMap(r => r.specializations).reduce((acc, spec) => {
+            acc[spec] = (acc[spec] || 0) + 1;
+            return acc;
+        }, {});
+
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#334155' } }
+            }
+        };
+
+        if(categoryChartInstance) categoryChartInstance.destroy();
+        categoryChartInstance = new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(categoryCounts),
+                datasets: [{ data: Object.values(categoryCounts), backgroundColor: ['#38bdf8', '#fbbf24', '#a78bfa', '#f87171'] }]
+            },
+            options: chartOptions
+        });
+
+        if(specializationChartInstance) specializationChartInstance.destroy();
+        specializationChartInstance = new Chart(specializationCtx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(specializationCounts),
+                datasets: [{ data: Object.values(specializationCounts), backgroundColor: ['#34d399', '#60a5fa', '#f472b6', '#fb923c', '#818cf8', '#c084fc', '#e879f9'] }]
+            },
+            options: chartOptions
+        });
+    }
+
+    // --- COORDINATORS SECTION ---
+
+    /**
+     * Initializes the entire Coordinators tab.
+     */
+    function initializeAppCoordinators() {
+        populateCoordinatorFilters();
+        renderCoordinators();
+        setupCoordinatorEventListeners();
+    }
+    
+    /**
+     * Populates filter dropdowns for the Coordinators tab.
+     */
+    function populateCoordinatorFilters() {
+        const counties = [...new Set(supportCoordinators.flatMap(c => c.counties))].sort();
+        const countyFilter = document.getElementById('county-filter');
+        countyFilter.innerHTML = '<option value="all">All Counties</option>';
+        counties.forEach(county => {
+            if(county) countyFilter.innerHTML += `<option value="${county}">${county}</option>`;
+        });
+    }
+
+    /**
+     * Sets up event listeners for coordinator filters.
+     */
+    function setupCoordinatorEventListeners() {
+        document.getElementById('search-input-coordinators').addEventListener('input', renderCoordinators);
+        document.getElementById('county-filter').addEventListener('change', renderCoordinators);
+    }
+    
+    /**
+     * Filters and renders the list of support coordinators.
+     */
+    function renderCoordinators() {
+        const grid = document.getElementById('results-grid-coordinators');
+        const countEl = document.getElementById('results-count-coordinators');
+        
+        const searchTerm = document.getElementById('search-input-coordinators').value.toLowerCase();
+        const county = document.getElementById('county-filter').value;
+        
+        const filtered = supportCoordinators.filter(c => {
+            const nameMatch = c.name.toLowerCase().includes(searchTerm);
+            const agencyMatch = c.agency.toLowerCase().includes(searchTerm);
+            const countyMatch = county === 'all' || c.counties.includes(county);
+            return (nameMatch || agencyMatch) && countyMatch;
+        });
+        
+        countEl.textContent = filtered.length;
+        grid.innerHTML = filtered.length > 0 ? filtered.map(createCoordinatorCardHTML).join('') : '<p class="col-span-full text-center text-slate-600">No matching coordinators found.</p>';
+        addCardEventListeners();
+    }
+
+    /**
+     * Generates the HTML for a single support coordinator card.
+     */
+    function createCoordinatorCardHTML(coordinator) {
+        const noteData = getNoteData(coordinator.id);
+        const hasNotes = noteData.notes || noteData.contacts.length > 0;
+
+        return `
+            <div class="glass-panel rounded-2xl p-5 shadow-lg flex flex-col h-full">
+                <div class="flex-grow">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-lg font-bold text-slate-900">${coordinator.name}</h3>
+                         ${hasNotes ? `<span class="text-2xl" title="Has Notes">📝</span>` : ''}
+                    </div>
+                    <p class="text-sm text-slate-600 mb-3">${coordinator.agency}</p>
+                    <div class="text-sm space-y-2 mb-4">
+                        <p><strong>Phone:</strong> ${coordinator.phone || 'N/A'}</p>
+                        <p><strong>Email:</strong> ${coordinator.email ? `<a href="mailto:${coordinator.email}" class="text-blue-600 hover:underline">${coordinator.email}</a>` : 'N/A'}</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        ${coordinator.counties.length > 0 ? coordinator.counties.map(c => `<span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">${c}</span>`).join('') : '<span class="text-slate-500 text-xs">No counties listed</span>'}
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-white/30 flex flex-wrap gap-2">
+                    <button class="action-btn-note flex-1 bg-gray-200 hover:bg-gray-300 text-slate-800 font-semibold py-2 px-4 rounded-lg transition" data-id="${coordinator.id}" data-name="${coordinator.name}">Add Note/Log</button>
+                    <button class="action-btn-gemini flex-1 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg transition" data-id="${coordinator.id}" data-type="coordinator">✨ Draft Email</button>
+                </div>
+            </div>
+        `;
+    }
+    
+    // --- HISTORY SECTION ---
+
+    /**
+     * Renders the combined history of all notes and logs.
+     */
+    function renderHistory() {
+        const content = document.getElementById('history-content');
+        const placeholder = document.getElementById('history-placeholder');
+        let allNotesHTML = '';
+        
+        const allItems = [...referralSources, ...supportCoordinators];
+        allItems.forEach(item => {
+            const data = getNoteData(item.id);
+            if (data.notes || data.contacts.length > 0) {
+                 allNotesHTML += `
+                    <div class="bg-white/30 p-4 rounded-xl">
+                        <h3 class="font-bold text-slate-800">${item.name}</h3>
+                        ${data.notes ? `<div class="mt-2 text-sm text-slate-700 whitespace-pre-wrap border-l-4 border-blue-300 pl-3"><strong>Notes:</strong> ${data.notes}</div>` : ''}
+                        ${data.contacts.length > 0 ? `
+                            <div class="mt-2 text-sm text-slate-700">
+                                <strong>Contact Log:</strong>
+                                <ul class="list-disc pl-5 mt-1">
+                                    ${data.contacts.map(log => `<li>${log.date} by ${log.by}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+        });
+
+        if (allNotesHTML) {
+            placeholder.style.display = 'none';
+            content.innerHTML = allNotesHTML;
+        } else {
+            placeholder.style.display = 'block';
+            content.innerHTML = '';
+            content.appendChild(placeholder);
+        }
+    }
+
+    // --- MODAL & DATA HANDLING ---
+    
+    /**
+     * Attaches event listeners to all action buttons on newly rendered cards.
+     */
+    function addCardEventListeners() {
+        document.querySelectorAll('.action-btn-note').forEach(btn => btn.addEventListener('click', openNotesModal));
+        document.querySelectorAll('.action-btn-gemini').forEach(btn => btn.addEventListener('click', openGeminiModal));
+    }
+
+    /**
+     * Opens the notes modal and populates it with existing data.
+     */
+    function openNotesModal(event) {
+        const id = event.currentTarget.dataset.id;
+        const name = event.currentTarget.dataset.name;
+        currentModalId = id;
+
+        const modal = document.getElementById('notes-modal');
+        document.getElementById('modal-title').textContent = `Log & Notes for ${name}`;
+        
+        const data = getNoteData(id);
+        document.getElementById('modal-notes').value = data.notes;
+        renderContactList(data.contacts);
+
+        modal.classList.add('active');
+        
+        // Attach modal-specific listeners
+        document.getElementById('modal-close-btn').onclick = closeNotesModal;
+        document.getElementById('modal-save-btn').onclick = saveNotesAndClose;
+        document.getElementById('modal-add-contact-btn').onclick = addContactLog;
+    }
+    
+    /**
+     * Closes the notes modal.
+     */
+    function closeNotesModal() {
+        document.getElementById('notes-modal').classList.remove('active');
+        currentModalId = null;
+    }
+    
+    /**
+     * Adds a new contact log entry in the modal.
+     */
+    function addContactLog() {
+        const byInput = document.getElementById('modal-contact-by');
+        const contactBy = byInput.value.trim();
+        if (!contactBy) {
+            showToast('Please enter your name.', 'error');
+            return;
+        }
+        
+        const data = getNoteData(currentModalId);
+        data.contacts.push({
+            by: contactBy,
+            date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+        });
+        
+        renderContactList(data.contacts);
+    }
+    
+    /**
+     * Renders the list of contact logs within the modal.
+     */
+    function renderContactList(contacts) {
+        const listEl = document.getElementById('modal-contact-list');
+        listEl.innerHTML = contacts.map(log => `
+            <div class="bg-white/50 p-2 rounded-md text-sm">${log.date} - Contacted by ${log.by}</div>
+        `).join('');
+    }
+
+    /**
+     * Saves the modal's data to localStorage and closes it.
+     */
+    function saveNotesAndClose() {
+        if (!currentModalId) return;
+        const notes = document.getElementById('modal-notes').value.trim();
+        const contactLogsHTML = document.getElementById('modal-contact-list').children;
+        
+        const contacts = Array.from(contactLogsHTML).map(item => {
+            const text = item.textContent; // "MM/DD/YYYY - Contacted by Name"
+            const parts = text.split(' - Contacted by ');
+            return { date: parts[0], by: parts[1] };
+        });
+
+        const data = { notes, contacts };
+        localStorage.setItem(currentModalId, JSON.stringify(data));
+        
+        closeNotesModal();
+        // Re-render the correct view to update note indicators
+        if (document.getElementById('view-referrals').classList.contains('active')) {
+            renderReferrals();
+        } else {
+            renderCoordinators();
+        }
+        showToast('Notes saved successfully!', 'success');
+    }
+
+    /**
+     * Retrieves note data for a given ID from localStorage.
+     */
+    function getNoteData(id) {
+        const data = localStorage.getItem(id);
+        return data ? JSON.parse(data) : { notes: '', contacts: [] };
+    }
+
+    // --- GEMINI AI ASSISTANT (STUB) ---
+
+    /**
+     * Opens the Gemini modal and populates it with a drafted email.
+     */
+    function openGeminiModal(event) {
+        const { id, type } = event.currentTarget.dataset;
+        const source = type === 'referral' 
+            ? referralSources.find(item => item.id === id) 
+            : supportCoordinators.find(item => item.id === id);
+
+        if (!source) return;
+
+        const modal = document.getElementById('gemini-modal');
+        const contentEl = document.getElementById('gemini-modal-content');
+        
+        document.getElementById('gemini-modal-title').innerHTML = `✨ AI Email for ${source.name}`;
+
+        const emailBody = generateEmailDraft(source, type);
+        contentEl.innerHTML = emailBody.replace(/\n/g, '<br>');
+
+        modal.classList.add('active');
+        
+        document.getElementById('gemini-modal-close-btn').onclick = () => modal.classList.remove('active');
+        document.getElementById('gemini-copy-btn').onclick = () => {
+            // Using document.execCommand for broader compatibility in restricted environments
+            const textarea = document.createElement('textarea');
+            textarea.value = emailBody;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast('Email text copied to clipboard!', 'success');
+        };
+    }
+
+    /**
+     * Generates a simulated email draft.
+     * In a real app, this would be an API call to Gemini.
+     */
+    function generateEmailDraft(source, type) {
+        const contactPerson = source.contactPerson || source.name;
+        const subject = `Introduction and Partnership Inquiry - T&T Serenity Care`;
+        let body;
+
+        if (type === 'referral') {
+            body = `
+Dear ${contactPerson},
+
+My name is [Your Name] and I am a [Your Title] at T&T Serenity Care. We provide specialized care and support services for individuals with developmental disabilities and complex medical needs.
+
+I came across your organization, ${source.name}, and was very impressed by your work in [Mention a specialization, e.g., ${source.specializations[0]}]. Given our shared commitment to supporting the community, I believe there may be opportunities for us to collaborate and support one another through referrals.
+
+Would you be open to a brief 15-minute call next week to discuss how we might work together?
+
+Thank you for your time and consideration.
+
+Sincerely,
+[Your Name]
+[Your Title]
+T&T Serenity Care
+[Your Phone Number]
+            `;
+        } else { // coordinator
+             body = `
+Dear ${source.name},
+
+My name is [Your Name] and I am a [Your Title] at T&T Serenity Care, a provider of specialized support services for individuals on the iBudget Waiver.
+
+I am reaching out to introduce our services. We are passionate about delivering compassionate and effective care tailored to each individual's needs. We would be honored to be considered as a provider for the clients you support in [Mention a county, e.g., ${source.counties[0] || 'your service area'}].
+
+Would you be available for a brief introductory call next week?
+
+Thank you for your dedication to the community.
+
+Best regards,
+[Your Name]
+[Your Title]
+T&T Serenity Care
+[Your Phone Number]
+            `;
+        }
+        
+        return `Subject: ${subject}\n\n${body.trim()}`;
+    }
+    
+    // --- DATA PORTABILITY ---
+    
+    /**
+     * Exports all note and log data from localStorage to a JSON file.
+     */
+    function handleExport() {
+        const exportData = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            // Ensure we only export keys that belong to our app's data items
+            if (key.startsWith('wsc_') || referralSources.some(r => r.id === key)) {
+                exportData[key] = JSON.parse(localStorage.getItem(key));
+            }
+        }
+        
+        if (Object.keys(exportData).length === 0) {
+            showToast('No notes to export.', 'info');
+            return;
+        }
+
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `tnt_serenity_care_notes_backup_${new Date().toISOString().split('T')[0]}.json`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        showToast('Data exported successfully.', 'success');
+    }
+    
+    /**
+     * Handles the import of a JSON file to populate localStorage.
+     */
+    function handleImport(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                let importCount = 0;
+                for (const key in importedData) {
+                    // Basic validation to ensure the imported data has the expected structure
+                    if (importedData.hasOwnProperty(key) && typeof importedData[key].notes !== 'undefined' && Array.isArray(importedData[key].contacts)) {
+                         localStorage.setItem(key, JSON.stringify(importedData[key]));
+                         importCount++;
+                    }
+                }
+                showToast(`Successfully imported ${importCount} records. Refreshing lists.`, 'success');
+                renderReferrals();
+                renderCoordinators();
+            } catch (error) {
+                showToast('Import failed. Invalid file format.', 'error');
+                console.error("Import error:", error);
+            }
+        };
+        reader.readAsText(file);
+        // Reset file input to allow importing the same file again
+        event.target.value = '';
+    }
+
+    // --- UTILITIES ---
+
+    /**
+     * Displays a temporary notification toast.
+     */
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+        
+        toast.className = `p-4 rounded-lg shadow-lg text-white ${bgColor} transition-all duration-300 transform translate-y-4 opacity-0`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        
+        // Animate in
+        setTimeout(() => {
+            toast.classList.remove('translate-y-4', 'opacity-0');
+        }, 10);
+        
+        // Animate out and remove
+        setTimeout(() => {
+            toast.classList.add('opacity-0');
+            toast.addEventListener('transitionend', () => toast.remove());
+        }, 3000);
+    }
+</script>
 </body>
 </html>
-
